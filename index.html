@@ -5,6 +5,19 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jellycat 独立站搜索 | 库存检测版</title>
     <style>
+      #countryCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;      /* 控制间距 */
+    margin-bottom: 1rem;
+}
+#countryCheckboxes label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    cursor: pointer;
+}
+        
         /* 样式代码（略，可沿用之前的样式，为了简洁此处不重复，但最终会包含完整样式） */
         body { font-family: system-ui; max-width: 1200px; margin: 2rem auto; padding: 1rem; background: #f5f7fa; }
         .container { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
