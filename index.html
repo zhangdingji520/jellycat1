@@ -18,7 +18,6 @@
             min-height: 100vh;
         }
 
-        /* 主卡片 */
         .card {
             max-width: 1200px;
             margin: 0 auto;
@@ -27,10 +26,8 @@
             border-radius: 2rem;
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05);
             overflow: hidden;
-            transition: all 0.2s ease;
         }
 
-        /* 头部 */
         .header {
             background: #fce7d7;
             padding: 2rem 2rem 1.5rem 2rem;
@@ -52,12 +49,10 @@
             font-size: 0.95rem;
         }
 
-        /* 内容区 */
         .content {
             padding: 2rem;
         }
 
-        /* 表单组 */
         .form-group {
             margin-bottom: 1.5rem;
         }
@@ -69,7 +64,7 @@
             font-size: 0.9rem;
             letter-spacing: 0.3px;
         }
-        input, select, .fake-input {
+        input, select {
             width: 100%;
             padding: 0.85rem 1rem;
             border-radius: 1.5rem;
@@ -85,7 +80,7 @@
             box-shadow: 0 0 0 3px rgba(247, 183, 135, 0.2);
         }
 
-        /* 国家复选框区域 - 每行5个 */
+        /* 国家复选框 - 每行5个 */
         .checkbox-group {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -119,10 +114,8 @@
             width: auto;
             margin: 0;
             accent-color: #e9a26c;
-            transform: scale(1);
         }
 
-        /* 按钮 */
         .btn {
             background: #e9a26c;
             color: white;
@@ -141,16 +134,12 @@
             transform: translateY(-2px);
             box-shadow: 0 8px 16px rgba(0,0,0,0.1);
         }
-        .btn:active {
-            transform: translateY(1px);
-        }
         .btn:disabled {
             background: #d9c2ae;
             cursor: not-allowed;
             transform: none;
         }
 
-        /* 统计卡片 */
         .stats {
             display: flex;
             flex-wrap: wrap;
@@ -175,10 +164,8 @@
         .stat-label {
             font-size: 0.75rem;
             color: #9e7a58;
-            letter-spacing: 0.3px;
         }
 
-        /* 结果列表 */
         .url-list {
             background: #fffcf8;
             border-radius: 1.5rem;
@@ -196,14 +183,12 @@
             color: #b2722e;
             text-decoration: none;
             font-size: 0.85rem;
-            transition: color 0.2s;
         }
         .url-item a:hover {
             color: #7b4a1e;
             text-decoration: underline;
         }
 
-        /* 日志区域 */
         .log-area {
             margin-top: 1.5rem;
             background: #fffaf5;
@@ -235,10 +220,8 @@
             border-bottom: 1px solid #ffedd9;
             padding: 0.2rem 0;
             white-space: pre-wrap;
-            word-break: break-word;
         }
 
-        /* 错误提示 */
         .error-message {
             background: #ffe8e6;
             color: #bc5a3c;
@@ -249,7 +232,6 @@
             text-align: center;
         }
 
-        /* 脚注 */
         .footer {
             text-align: center;
             font-size: 0.7rem;
@@ -259,7 +241,6 @@
             background: #fffbf7;
         }
 
-        /* 辅助 */
         .subnote {
             font-size: 0.7rem;
             color: #b7916e;
@@ -292,14 +273,12 @@
     </div>
 
     <div class="content">
-        <!-- API密钥 -->
         <div class="form-group">
             <label>🔑 Serper API 密钥</label>
             <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
             <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank" style="color:#e9a26c;">serper.dev</a>，每月 2500 次搜索</div>
         </div>
 
-        <!-- 国家选择 (每行5个) -->
         <div class="form-group">
             <label>🌍 选择国家（可多选）</label>
             <div class="checkbox-group" id="countryCheckboxes">
@@ -316,19 +295,16 @@
             </div>
         </div>
 
-        <!-- 关键词 -->
         <div class="form-group">
             <label>🔍 搜索关键词（英文逗号分隔）</label>
             <input type="text" id="keywords" value="jellycat nesting bunnies, nesting bunnies jellycat, jellycat nesting bunnies set, jellycat nesting rabbits, jellycat stacking bunnies">
         </div>
 
-        <!-- 目标数量 -->
         <div class="form-group">
             <label>🎯 目标独立站数量</label>
             <input type="number" id="target" value="100" min="10" max="500" step="10">
         </div>
 
-        <!-- 后端代理地址 -->
         <div class="form-group">
             <label>🖥️ 后端代理地址（Vercel 函数）</label>
             <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
@@ -338,7 +314,6 @@
         <button id="searchBtn" class="btn">🚀 开始寻宝 · 搜索并检测</button>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
 
-        <!-- 日志区域（初始隐藏） -->
         <div id="logArea" class="log-area" style="display:none;">
             <div class="log-title">📋 寻宝日志</div>
             <div id="logContent" class="log-content"></div>
@@ -364,7 +339,6 @@
 </div>
 
 <script>
-    // DOM 元素
     const apiKeyInput = document.getElementById('apiKey');
     const proxyUrlInput = document.getElementById('proxyUrl');
     const searchBtn = document.getElementById('searchBtn');
@@ -379,12 +353,11 @@
     const usdSpan = document.getElementById('usdCount');
     const buyableListDiv = document.getElementById('buyableList');
 
-    // 添加日志
-    function addLog(message, isError = false) {
+    function addLog(msg, isError = false) {
         const line = document.createElement('div');
         line.className = 'log-line';
         line.style.color = isError ? '#bc5a3c' : '#5a3e2b';
-        line.textContent = `🕒 ${new Date().toLocaleTimeString()}  ${message}`;
+        line.textContent = `🕒 ${new Date().toLocaleTimeString()}  ${msg}`;
         logContent.appendChild(line);
         line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -393,7 +366,6 @@
         logContent.innerHTML = '';
     }
 
-    // 获取选中国家
     function getSelectedCountries() {
         const checkboxes = document.querySelectorAll('#countryCheckboxes input:checked');
         return Array.from(checkboxes).map(cb => cb.value);
@@ -425,15 +397,12 @@
         clearLog();
         addLog('✨ 开始寻宝之旅 ✨');
 
-        let allResults = []; // { url, status }
+        let allResults = [];
         let totalRequests = 0;
 
         try {
             for (const country of countries) {
-                if (allResults.length >= target) {
-                    addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
-                    break;
-                }
+                if (allResults.length >= target) break;
                 for (const kw of keywords) {
                     if (allResults.length >= target) break;
                     addLog(`🔎 正在搜索 ${country} - “${kw}” ...`);
@@ -450,7 +419,6 @@
                     const data = await response.json();
                     if (data.results && Array.isArray(data.results)) {
                         addLog(`📦 收到 ${data.results.length} 个原始结果（含重复）`);
-                        // 去重域名
                         const domainMap = new Map();
                         for (const item of data.results) {
                             try {
@@ -459,14 +427,12 @@
                             } catch(e) {}
                         }
                         const newItems = Array.from(domainMap.values());
-                        const added = newItems.length;
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
-                        addLog(`✨ 去重后新增 ${added} 个独立域名，累计 ${allResults.length}/${target}`);
+                        addLog(`✨ 去重后新增 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                     } else {
                         addLog(`⚠️ 未获得有效结果`, true);
                     }
-                    // 短暂延迟避免请求过快
                     await new Promise(r => setTimeout(r, 200));
                 }
             }
@@ -480,7 +446,6 @@
 
         addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
 
-        // 分类统计
         const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
@@ -492,7 +457,6 @@
         unknownSpan.textContent = unknown.length;
         usdSpan.textContent = usdExcluded.length;
 
-        // 渲染可购买列表
         buyableListDiv.innerHTML = '';
         if (buyable.length === 0) {
             buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
