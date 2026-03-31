@@ -36,7 +36,7 @@ export default async function handler(req, res) {
   const uniqueUrls = Array.from(domainMap.values());
 
   // 如果 URL 太多，限制验证数量（避免超时）
-  const MAX_VERIFY = 50;
+  const MAX_VERIFY = 20;
   const urlsToVerify = uniqueUrls.slice(0, MAX_VERIFY);
 
   // 2. 定义缺货和有货关键词（多语言）
