@@ -85,11 +85,11 @@
             box-shadow: 0 0 0 3px rgba(247, 183, 135, 0.2);
         }
 
-        /* 国家复选框区域 */
+        /* 国家复选框区域 - 每行5个 */
         .checkbox-group {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.75rem 1.2rem;
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem 1rem;
             background: #fffaf5;
             padding: 1rem 1.2rem;
             border-radius: 1.5rem;
@@ -109,6 +109,7 @@
             font-size: 0.9rem;
             color: #6b4c34;
             border: 1px solid #ffdeca;
+            white-space: nowrap;
         }
         .checkbox-group label:hover {
             background: #ffefe3;
@@ -202,6 +203,41 @@
             text-decoration: underline;
         }
 
+        /* 日志区域 */
+        .log-area {
+            margin-top: 1.5rem;
+            background: #fffaf5;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe8da;
+            padding: 1rem;
+        }
+        .log-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #7b5a3e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .log-content {
+            background: #fef7f0;
+            border-radius: 1rem;
+            padding: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: #5a3e2b;
+            line-height: 1.4;
+        }
+        .log-line {
+            border-bottom: 1px solid #ffedd9;
+            padding: 0.2rem 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
         /* 错误提示 */
         .error-message {
             background: #ffe8e6;
@@ -230,12 +266,20 @@
             margin-top: 0.4rem;
         }
 
-        @media (max-width: 640px) {
+        @media (max-width: 700px) {
+            .checkbox-group {
+                grid-template-columns: repeat(3, 1fr);
+            }
             .content {
                 padding: 1.2rem;
             }
             .header h1 {
                 font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .checkbox-group {
+                grid-template-columns: repeat(2, 1fr);
             }
         }
     </style>
@@ -255,7 +299,7 @@
             <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank" style="color:#e9a26c;">serper.dev</a>，每月 2500 次搜索</div>
         </div>
 
-        <!-- 国家选择 (横向) 新增瑞士 -->
+        <!-- 国家选择 (每行5个) -->
         <div class="form-group">
             <label>🌍 选择国家（可多选）</label>
             <div class="checkbox-group" id="countryCheckboxes">
@@ -294,6 +338,12 @@
         <button id="searchBtn" class="btn">🚀 开始寻宝 · 搜索并检测</button>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
 
+        <!-- 日志区域（初始隐藏） -->
+        <div id="logArea" class="log-area" style="display:none;">
+            <div class="log-title">📋 寻宝日志</div>
+            <div id="logContent" class="log-content"></div>
+        </div>
+
         <div id="resultArea" style="display:none;">
             <div class="stats">
                 <div class="stat-item"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
@@ -320,12 +370,28 @@
     const searchBtn = document.getElementById('searchBtn');
     const errorDiv = document.getElementById('errorMsg');
     const resultArea = document.getElementById('resultArea');
+    const logArea = document.getElementById('logArea');
+    const logContent = document.getElementById('logContent');
     const totalSpan = document.getElementById('totalCount');
     const buyableSpan = document.getElementById('buyableCount');
     const soldOutSpan = document.getElementById('soldOutCount');
     const unknownSpan = document.getElementById('unknownCount');
     const usdSpan = document.getElementById('usdCount');
     const buyableListDiv = document.getElementById('buyableList');
+
+    // 添加日志
+    function addLog(message, isError = false) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.style.color = isError ? '#bc5a3c' : '#5a3e2b';
+        line.textContent = `🕒 ${new Date().toLocaleTimeString()}  ${message}`;
+        logContent.appendChild(line);
+        line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearLog() {
+        logContent.innerHTML = '';
+    }
 
     // 获取选中国家
     function getSelectedCountries() {
@@ -355,15 +421,22 @@
         searchBtn.textContent = '⏳ 寻宝中… 正在搜索 & 检测库存';
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
+        logArea.style.display = 'block';
+        clearLog();
+        addLog('✨ 开始寻宝之旅 ✨');
 
         let allResults = []; // { url, status }
         let totalRequests = 0;
 
         try {
             for (const country of countries) {
-                if (allResults.length >= target) break;
+                if (allResults.length >= target) {
+                    addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
+                    break;
+                }
                 for (const kw of keywords) {
                     if (allResults.length >= target) break;
+                    addLog(`🔎 正在搜索 ${country} - “${kw}” ...`);
                     totalRequests++;
                     const response = await fetch(proxyUrl, {
                         method: 'POST',
@@ -376,6 +449,7 @@
                     }
                     const data = await response.json();
                     if (data.results && Array.isArray(data.results)) {
+                        addLog(`📦 收到 ${data.results.length} 个原始结果（含重复）`);
                         // 去重域名
                         const domainMap = new Map();
                         for (const item of data.results) {
@@ -385,17 +459,26 @@
                             } catch(e) {}
                         }
                         const newItems = Array.from(domainMap.values());
+                        const added = newItems.length;
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
+                        addLog(`✨ 去重后新增 ${added} 个独立域名，累计 ${allResults.length}/${target}`);
+                    } else {
+                        addLog(`⚠️ 未获得有效结果`, true);
                     }
+                    // 短暂延迟避免请求过快
+                    await new Promise(r => setTimeout(r, 200));
                 }
             }
         } catch (err) {
-            showError(`❌ 请求失败: ${err.message}`);
+            addLog(`❌ 错误: ${err.message}`, true);
+            showError(`请求失败: ${err.message}`);
             searchBtn.disabled = false;
             searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
             return;
         }
+
+        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
 
         // 分类统计
         const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
@@ -422,6 +505,7 @@
             }
         }
 
+        addLog(`🎉 完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，排除美元站: ${usdExcluded.length}`);
         resultArea.style.display = 'block';
         searchBtn.disabled = false;
         searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
