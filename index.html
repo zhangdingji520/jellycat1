@@ -2,104 +2,360 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Jellycat 独立站搜索 | 库存检测版</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>🐰 Jellycat 小窝 · 智能搜索</title>
     <style>
-      #countryCheckboxes {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem;      /* 控制间距 */
-    margin-bottom: 1rem;
-}
-#countryCheckboxes label {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.25rem;
-    cursor: pointer;
-}
-        
-        /* 样式代码（略，可沿用之前的样式，为了简洁此处不重复，但最终会包含完整样式） */
-        body { font-family: system-ui; max-width: 1200px; margin: 2rem auto; padding: 1rem; background: #f5f7fa; }
-        .container { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
-        input, select, button { width: 100%; padding: 0.75rem; margin-top: 0.5rem; margin-bottom: 1rem; border-radius: 12px; border: 1px solid #ccc; }
-        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; }
-        .result-area { margin-top: 2rem; }
-        .url-list { max-height: 400px; overflow-y: auto; background: #f8fafc; padding: 1rem; border-radius: 16px; }
-        .url-item { padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
-        .stat-card { display: inline-block; margin-right: 1rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 20px; }
-        .error { color: red; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%);
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        /* 主卡片 */
+        .card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            transition: all 0.2s ease;
+        }
+
+        /* 头部 */
+        .header {
+            background: #fce7d7;
+            padding: 2rem 2rem 1.5rem 2rem;
+            border-bottom: 2px solid #ffd6b5;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+            color: #6b3e1c;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .header p {
+            color: #a06e3c;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        /* 内容区 */
+        .content {
+            padding: 2rem;
+        }
+
+        /* 表单组 */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            font-weight: 600;
+            color: #5a3e2b;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+        input, select, .fake-input {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe1c4;
+            background: #fffef9;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            border-color: #f7b787;
+            box-shadow: 0 0 0 3px rgba(247, 183, 135, 0.2);
+        }
+
+        /* 国家复选框区域 */
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem 1.2rem;
+            background: #fffaf5;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe7d4;
+        }
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: normal;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b4c34;
+            border: 1px solid #ffdeca;
+        }
+        .checkbox-group label:hover {
+            background: #ffefe3;
+            border-color: #f7b787;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin: 0;
+            accent-color: #e9a26c;
+            transform: scale(1);
+        }
+
+        /* 按钮 */
+        .btn {
+            background: #e9a26c;
+            color: white;
+            border: none;
+            padding: 0.9rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .btn:hover {
+            background: #dc8b4f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .btn:active {
+            transform: translateY(1px);
+        }
+        .btn:disabled {
+            background: #d9c2ae;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* 统计卡片 */
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0 1.5rem;
+        }
+        .stat-item {
+            background: #fef5ea;
+            border-radius: 2rem;
+            padding: 0.6rem 1.2rem;
+            text-align: center;
+            flex: 1;
+            min-width: 90px;
+            border: 1px solid #ffeedd;
+        }
+        .stat-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #7b5a3e;
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9e7a58;
+            letter-spacing: 0.3px;
+        }
+
+        /* 结果列表 */
+        .url-list {
+            background: #fffcf8;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe8da;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .url-item {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #ffedd9;
+            word-break: break-all;
+        }
+        .url-item a {
+            color: #b2722e;
+            text-decoration: none;
+            font-size: 0.85rem;
+            transition: color 0.2s;
+        }
+        .url-item a:hover {
+            color: #7b4a1e;
+            text-decoration: underline;
+        }
+
+        /* 错误提示 */
+        .error-message {
+            background: #ffe8e6;
+            color: #bc5a3c;
+            border-radius: 1.5rem;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        /* 脚注 */
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #cbab8b;
+            border-top: 1px solid #ffedd9;
+            padding: 1.5rem;
+            background: #fffbf7;
+        }
+
+        /* 辅助 */
+        .subnote {
+            font-size: 0.7rem;
+            color: #b7916e;
+            margin-top: 0.4rem;
+        }
+
+        @media (max-width: 640px) {
+            .content {
+                padding: 1.2rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>🐰 Jellycat 智能搜索</h1>
-    <p>输入 Serper API 密钥，自动搜索欧洲九国独立站，检测库存，排除美元网站</p>
-
-    <label>🔑 Serper API 密钥</label>
-    <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
-
-    <label>🌍 选择国家</label>
-    <div id="countryCheckboxes">
-        <label><input type="checkbox" value="DE" checked> 德国</label>
-        <label><input type="checkbox" value="FR" checked> 法国</label>
-        <label><input type="checkbox" value="ES" checked> 西班牙</label>
-        <label><input type="checkbox" value="IT" checked> 意大利</label>
-        <label><input type="checkbox" value="NL" checked> 荷兰</label>
-        <label><input type="checkbox" value="BE" checked> 比利时</label>
-        <label><input type="checkbox" value="PL" checked> 波兰</label>
-        <label><input type="checkbox" value="PT" checked> 葡萄牙</label>
-        <label><input type="checkbox" value="GB"> 英国</label>
+<div class="card">
+    <div class="header">
+        <h1>🐣 Jellycat 小窝 · 智能寻宝</h1>
+        <p>搜索 Nesting Bunnies 系列，全球独立站库存检测，自动剔除美元站 🍃</p>
     </div>
 
-    <label>🔍 搜索关键词（用英文逗号分隔）</label>
-    <input type="text" id="keywords" value="jellycat nesting bunnies, nesting bunnies jellycat, jellycat nesting bunnies set, jellycat nesting rabbits, jellycat stacking bunnies">
-
-    <label>🎯 目标独立站数量</label>
-    <input type="number" id="target" value="100" min="10" max="500">
-
-    <label>🌐 后端代理地址（你的 Vercel 函数地址）</label>
-    <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="">
-
-    <button id="searchBtn">🚀 开始搜索</button>
-    <div id="errorMsg" class="error" style="display:none;"></div>
-
-    <div id="resultArea" style="display:none;">
-        <hr>
-        <div>
-            <span class="stat-card">总计：<span id="totalCount">0</span></span>
-            <span class="stat-card">✅ 可购买：<span id="buyableCount">0</span></span>
-            <span class="stat-card">🚫 售罄：<span id="soldOutCount">0</span></span>
-            <span class="stat-card">❓ 未知：<span id="unknownCount">0</span></span>
-            <span class="stat-card">💵 排除美元站：<span id="usdCount">0</span></span>
+    <div class="content">
+        <!-- API密钥 -->
+        <div class="form-group">
+            <label>🔑 Serper API 密钥</label>
+            <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
+            <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank" style="color:#e9a26c;">serper.dev</a>，每月 2500 次搜索</div>
         </div>
-        <h3>✅ 可购买链接（无美元站）</h3>
-        <div id="buyableList" class="url-list"></div>
+
+        <!-- 国家选择 (横向) -->
+        <div class="form-group">
+            <label>🌍 选择国家（可多选）</label>
+            <div class="checkbox-group" id="countryCheckboxes">
+                <label><input type="checkbox" value="DE" checked> 🇩🇪 德国</label>
+                <label><input type="checkbox" value="FR" checked> 🇫🇷 法国</label>
+                <label><input type="checkbox" value="ES" checked> 🇪🇸 西班牙</label>
+                <label><input type="checkbox" value="IT" checked> 🇮🇹 意大利</label>
+                <label><input type="checkbox" value="NL" checked> 🇳🇱 荷兰</label>
+                <label><input type="checkbox" value="BE" checked> 🇧🇪 比利时</label>
+                <label><input type="checkbox" value="PL" checked> 🇵🇱 波兰</label>
+                <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
+                <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
+            </div>
+        </div>
+
+        <!-- 关键词 -->
+        <div class="form-group">
+            <label>🔍 搜索关键词（英文逗号分隔）</label>
+            <input type="text" id="keywords" value="jellycat nesting bunnies, nesting bunnies jellycat, jellycat nesting bunnies set, jellycat nesting rabbits, jellycat stacking bunnies">
+        </div>
+
+        <!-- 目标数量 -->
+        <div class="form-group">
+            <label>🎯 目标独立站数量</label>
+            <input type="number" id="target" value="100" min="10" max="500" step="10">
+        </div>
+
+        <!-- 后端代理地址 -->
+        <div class="form-group">
+            <label>🖥️ 后端代理地址（Vercel 函数）</label>
+            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
+            <div class="subnote">📡 如果你有自己的后端，请替换为你的地址</div>
+        </div>
+
+        <button id="searchBtn" class="btn">🚀 开始寻宝 · 搜索并检测</button>
+        <div id="errorMsg" class="error-message" style="display:none;"></div>
+
+        <div id="resultArea" style="display:none;">
+            <div class="stats">
+                <div class="stat-item"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
+                <div class="stat-item"><div class="stat-number" id="buyableCount">0</div><div class="stat-label">✅ 可购买</div></div>
+                <div class="stat-item"><div class="stat-number" id="soldOutCount">0</div><div class="stat-label">🚫 售罄/缺货</div></div>
+                <div class="stat-item"><div class="stat-number" id="unknownCount">0</div><div class="stat-label">❓ 无法判断</div></div>
+                <div class="stat-item"><div class="stat-number" id="usdCount">0</div><div class="stat-label">💵 已排除美元站</div></div>
+            </div>
+            <h3 style="margin: 1rem 0 0.5rem; font-size:1.1rem;">✨ 可购买宝贝（点开即达）</h3>
+            <div id="buyableList" class="url-list">
+                <div style="text-align:center; color:#bda48a; padding:2rem;">✨ 点击搜索后，这里会出现可购买链接 ✨</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        🐇 数据来源 Serper.dev | 独立站库存实时检测 | 自动过滤美元标价站点
     </div>
 </div>
 
 <script>
+    // DOM 元素
     const apiKeyInput = document.getElementById('apiKey');
     const proxyUrlInput = document.getElementById('proxyUrl');
     const searchBtn = document.getElementById('searchBtn');
     const errorDiv = document.getElementById('errorMsg');
     const resultArea = document.getElementById('resultArea');
+    const totalSpan = document.getElementById('totalCount');
+    const buyableSpan = document.getElementById('buyableCount');
+    const soldOutSpan = document.getElementById('soldOutCount');
+    const unknownSpan = document.getElementById('unknownCount');
+    const usdSpan = document.getElementById('usdCount');
+    const buyableListDiv = document.getElementById('buyableList');
 
-    async function search() {
+    // 获取选中国家
+    function getSelectedCountries() {
+        const checkboxes = document.querySelectorAll('#countryCheckboxes input:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    async function startSearch() {
         const apiKey = apiKeyInput.value.trim();
-        if (!apiKey) { showError('请填写 Serper API 密钥'); return; }
-        const countries = Array.from(document.querySelectorAll('#countryCheckboxes input:checked')).map(cb => cb.value);
-        if (!countries.length) { showError('请至少选择一个国家'); return; }
-        const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k);
+        if (!apiKey) { showError('🐣 请先填写 Serper API 密钥～'); return; }
+        const countries = getSelectedCountries();
+        if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
+        const keywordsRaw = document.getElementById('keywords').value;
+        const keywords = keywordsRaw.split(',').map(k => k.trim()).filter(k => k);
+        if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词'); return; }
         const target = parseInt(document.getElementById('target').value) || 100;
         const proxyUrl = proxyUrlInput.value.trim();
-        if (!proxyUrl) { showError('请填写后端代理地址'); return; }
+        if (!proxyUrl) { showError('🖥️ 请填写后端代理地址（例如 https://xxx.vercel.app/api/search）'); return; }
 
         searchBtn.disabled = true;
-        searchBtn.textContent = '搜索中...';
+        searchBtn.textContent = '⏳ 寻宝中… 正在搜索 & 检测库存';
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
 
-        let allResults = []; // 存储后端返回的每个结果 { url, status }
+        let allResults = []; // { url, status }
         let totalRequests = 0;
 
         try {
@@ -113,10 +369,13 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ query: kw, country, apiKey })
                     });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`后端返回 ${response.status}: ${errText.slice(0, 100)}`);
+                    }
                     const data = await response.json();
-                    if (data.results) {
-                        // 去重（同一域名只保留第一个）
+                    if (data.results && Array.isArray(data.results)) {
+                        // 去重域名
                         const domainMap = new Map();
                         for (const item of data.results) {
                             try {
@@ -124,52 +383,50 @@
                                 if (!domainMap.has(host)) domainMap.set(host, item);
                             } catch(e) {}
                         }
-                        const newResults = Array.from(domainMap.values());
-                        allResults.push(...newResults);
-                        if (allResults.length >= target) allResults = allResults.slice(0, target);
+                        const newItems = Array.from(domainMap.values());
+                        allResults.push(...newItems);
+                        if (allResults.length > target) allResults = allResults.slice(0, target);
                     }
                 }
             }
         } catch (err) {
-            showError(`请求失败: ${err.message}`);
+            showError(`❌ 请求失败: ${err.message}`);
             searchBtn.disabled = false;
-            searchBtn.textContent = '🚀 开始搜索';
+            searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
             return;
         }
 
-        // 统计分类
+        // 分类统计
         const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
         const usdExcluded = allResults.filter(r => r.status === 'usd_excluded').map(r => r.url);
 
-        document.getElementById('totalCount').textContent = allResults.length;
-        document.getElementById('buyableCount').textContent = buyable.length;
-        document.getElementById('soldOutCount').textContent = soldOut.length;
-        document.getElementById('unknownCount').textContent = unknown.length;
-        document.getElementById('usdCount').textContent = usdExcluded.length;
+        totalSpan.textContent = allResults.length;
+        buyableSpan.textContent = buyable.length;
+        soldOutSpan.textContent = soldOut.length;
+        unknownSpan.textContent = unknown.length;
+        usdSpan.textContent = usdExcluded.length;
 
-        const listDiv = document.getElementById('buyableList');
-        listDiv.innerHTML = '';
-        for (const url of buyable) {
-            const div = document.createElement('div');
-            div.className = 'url-item';
-            div.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
-            listDiv.appendChild(div);
+        // 渲染可购买列表
+        buyableListDiv.innerHTML = '';
+        if (buyable.length === 0) {
+            buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
+        } else {
+            for (const url of buyable) {
+                const div = document.createElement('div');
+                div.className = 'url-item';
+                div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+                buyableListDiv.appendChild(div);
+            }
         }
 
         resultArea.style.display = 'block';
         searchBtn.disabled = false;
-        searchBtn.textContent = '🚀 开始搜索';
+        searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
     }
 
-    function showError(msg) {
-        errorDiv.textContent = msg;
-        errorDiv.style.display = 'block';
-        setTimeout(() => errorDiv.style.display = 'none', 5000);
-    }
-
-    searchBtn.addEventListener('click', search);
+    searchBtn.addEventListener('click', startSearch);
 </script>
 </body>
 </html>
