@@ -9,7 +9,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    // 调用 Serper API，限制返回数量为 10，减少处理时间
+    // 调用 Serper API
     const response = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: {
@@ -21,10 +21,9 @@ export default async function handler(req, res) {
 
     const data = await response.json();
     const links = (data.organic || []).map(item => item.link).filter(Boolean);
-
-    // 简单去重（避免复杂 URL 解析）
+    // 简单去重
     const uniqueUrls = [...new Set(links)];
-    // 将所有结果标记为 "buyable"（前端会展示为可购买）
+    // 将所有结果标记为“可购买”（前端展示用）
     const results = uniqueUrls.map(url => ({ url, status: 'buyable' }));
 
     res.status(200).json({ results });
