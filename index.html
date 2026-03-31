@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jellycat 独立站搜索 | 库存检测版</title>
+    <style>
+        /* 样式代码（略，可沿用之前的样式，为了简洁此处不重复，但最终会包含完整样式） */
+        body { font-family: system-ui; max-width: 1200px; margin: 2rem auto; padding: 1rem; background: #f5f7fa; }
+        .container { background: white; border-radius: 24px; padding: 2rem; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+        input, select, button { width: 100%; padding: 0.75rem; margin-top: 0.5rem; margin-bottom: 1rem; border-radius: 12px; border: 1px solid #ccc; }
+        button { background: #2c3e50; color: white; font-weight: bold; cursor: pointer; }
+        .result-area { margin-top: 2rem; }
+        .url-list { max-height: 400px; overflow-y: auto; background: #f8fafc; padding: 1rem; border-radius: 16px; }
+        .url-item { padding: 0.5rem; border-bottom: 1px solid #e2e8f0; }
+        .stat-card { display: inline-block; margin-right: 1rem; background: #f1f5f9; padding: 0.5rem 1rem; border-radius: 20px; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🐰 Jellycat Nesting Bunnies 智能搜索</h1>
+    <p>输入 Serper API 密钥，自动搜索欧洲七国独立站，检测库存，排除美元网站</p>
+
+    <label>🔑 Serper API 密钥</label>
+    <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
+
+    <label>🌍 选择国家</label>
+    <div id="countryCheckboxes">
+        <label><input type="checkbox" value="DE" checked> 德国</label>
+        <label><input type="checkbox" value="FR" checked> 法国</label>
+        <label><input type="checkbox" value="ES" checked> 西班牙</label>
+        <label><input type="checkbox" value="IT" checked> 意大利</label>
+        <label><input type="checkbox" value="NL" checked> 荷兰</label>
+        <label><input type="checkbox" value="BE" checked> 比利时</label>
+        <label><input type="checkbox" value="PL" checked> 波兰</label>
+        <label><input type="checkbox" value="PT" checked> 葡萄牙</label>
+        <label><input type="checkbox" value="GB"> 英国</label>
+    </div>
+
+    <label>🔍 搜索关键词（用英文逗号分隔）</label>
+    <input type="text" id="keywords" value="jellycat nesting bunnies, nesting bunnies jellycat, jellycat nesting bunnies set, jellycat nesting rabbits, jellycat stacking bunnies">
+
+    <label>🎯 目标独立站数量</label>
+    <input type="number" id="target" value="100" min="10" max="500">
+
+    <label>🌐 后端代理地址（你的 Vercel 函数地址）</label>
+    <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="">
+
+    <button id="searchBtn">🚀 开始搜索</button>
+    <div id="errorMsg" class="error" style="display:none;"></div>
+
+    <div id="resultArea" style="display:none;">
+        <hr>
+        <div>
+            <span class="stat-card">总计：<span id="totalCount">0</span></span>
+            <span class="stat-card">✅ 可购买：<span id="buyableCount">0</span></span>
+            <span class="stat-card">🚫 售罄：<span id="soldOutCount">0</span></span>
+            <span class="stat-card">❓ 未知：<span id="unknownCount">0</span></span>
+            <span class="stat-card">💵 排除美元站：<span id="usdCount">0</span></span>
+        </div>
+        <h3>✅ 可购买链接（无美元站）</h3>
+        <div id="buyableList" class="url-list"></div>
+    </div>
+</div>
+
+<script>
+    const apiKeyInput = document.getElementById('apiKey');
+    const proxyUrlInput = document.getElementById('proxyUrl');
+    const searchBtn = document.getElementById('searchBtn');
+    const errorDiv = document.getElementById('errorMsg');
+    const resultArea = document.getElementById('resultArea');
+
+    async function search() {
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) { showError('请填写 Serper API 密钥'); return; }
+        const countries = Array.from(document.querySelectorAll('#countryCheckboxes input:checked')).map(cb => cb.value);
+        if (!countries.length) { showError('请至少选择一个国家'); return; }
+        const keywords = document.getElementById('keywords').value.split(',').map(k => k.trim()).filter(k => k);
+        const target = parseInt(document.getElementById('target').value) || 100;
+        const proxyUrl = proxyUrlInput.value.trim();
+        if (!proxyUrl) { showError('请填写后端代理地址'); return; }
+
+        searchBtn.disabled = true;
+        searchBtn.textContent = '搜索中...';
+        errorDiv.style.display = 'none';
+        resultArea.style.display = 'none';
+
+        let allResults = []; // 存储后端返回的每个结果 { url, status }
+        let totalRequests = 0;
+
+        try {
+            for (const country of countries) {
+                if (allResults.length >= target) break;
+                for (const kw of keywords) {
+                    if (allResults.length >= target) break;
+                    totalRequests++;
+                    const response = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: kw, country, apiKey })
+                    });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.results) {
+                        // 去重（同一域名只保留第一个）
+                        const domainMap = new Map();
+                        for (const item of data.results) {
+                            try {
+                                const host = new URL(item.url).hostname.replace(/^www\./, '');
+                                if (!domainMap.has(host)) domainMap.set(host, item);
+                            } catch(e) {}
+                        }
+                        const newResults = Array.from(domainMap.values());
+                        allResults.push(...newResults);
+                        if (allResults.length >= target) allResults = allResults.slice(0, target);
+                    }
+                }
+            }
+        } catch (err) {
+            showError(`请求失败: ${err.message}`);
+            searchBtn.disabled = false;
+            searchBtn.textContent = '🚀 开始搜索';
+            return;
+        }
+
+        // 统计分类
+        const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
+        const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
+        const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
+        const usdExcluded = allResults.filter(r => r.status === 'usd_excluded').map(r => r.url);
+
+        document.getElementById('totalCount').textContent = allResults.length;
+        document.getElementById('buyableCount').textContent = buyable.length;
+        document.getElementById('soldOutCount').textContent = soldOut.length;
+        document.getElementById('unknownCount').textContent = unknown.length;
+        document.getElementById('usdCount').textContent = usdExcluded.length;
+
+        const listDiv = document.getElementById('buyableList');
+        listDiv.innerHTML = '';
+        for (const url of buyable) {
+            const div = document.createElement('div');
+            div.className = 'url-item';
+            div.innerHTML = `<a href="${url}" target="_blank">${url}</a>`;
+            listDiv.appendChild(div);
+        }
+
+        resultArea.style.display = 'block';
+        searchBtn.disabled = false;
+        searchBtn.textContent = '🚀 开始搜索';
+    }
+
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    searchBtn.addEventListener('click', search);
+</script>
+</body>
+</html>
