@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat 小窝 · 智能搜索（可保存链接+序号）</title>
+    <title>🐰 Jellycat 小窝 · 智能搜索（修复对齐）</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -14,8 +14,35 @@
         .form-group { margin-bottom: 1.5rem; }
         label { font-weight: 600; color: #5a3e2b; display: block; margin-bottom: 0.5rem; }
         input, select { width: 100%; padding: 0.85rem 1rem; border-radius: 1.5rem; border: 1px solid #ffe1c4; background: #fffef9; }
-        .checkbox-group { display: grid; grid-template-columns: repeat(5,1fr); gap: 0.75rem 1rem; background: #fffaf5; padding: 1rem; border-radius: 1.5rem; border: 1px solid #ffe7d4; }
-        .checkbox-group label { display: inline-flex; align-items: center; gap: 0.4rem; background: white; padding: 0.3rem 0.8rem; border-radius: 2rem; border: 1px solid #ffdeca; }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem 1rem;
+            background: #fffaf5;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe7d4;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: normal;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b4c34;
+            border: 1px solid #ffdeca;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .checkbox-group label:hover { background: #ffefe3; border-color: #f7b787; }
+        .checkbox-group input { width: auto; margin: 0; accent-color: #e9a26c; flex-shrink: 0; }
         .button-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
         .btn { background: #e9a26c; color: white; border: none; padding: 0.9rem; border-radius: 2rem; font-weight: bold; cursor: pointer; flex: 1; }
         .btn:hover { background: #dc8b4f; }
@@ -33,10 +60,11 @@
         .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
         .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
         .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; }
-        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
         .save-btn:hover { background: #8bb891; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
+        @media (max-width: 480px) { .checkbox-group { grid-template-columns: repeat(2,1fr); } }
     </style>
 </head>
 <body>
@@ -116,7 +144,7 @@
         "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
         "hood.de", "kleinanzeigen",
         "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-        "jellyjournal.com", "lilietmilou.com", "ubuy"
+        "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com"
     ];
     function isExcludedUrl(url) { return EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain)); }
 
@@ -138,10 +166,7 @@
     const buyableListDiv = document.getElementById('buyableList');
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
 
-    // 存储当前可购买的 URL 列表（用于导出）
     let currentBuyableUrls = [];
-
-    // 任务控制变量
     let currentTask = null;
     let shouldStop = false;
     let isPaused = false;
@@ -174,7 +199,6 @@
         }
     }
 
-    // 保存链接功能（仅保存网址，不带序号）
     function saveUrlsToFile() {
         if (currentBuyableUrls.length === 0) {
             alert('没有可购买的链接，请先搜索。');
@@ -309,7 +333,7 @@
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
 
-        currentBuyableUrls = buyable;  // 保存供导出
+        currentBuyableUrls = buyable;
 
         totalSpan.textContent = allResults.length;
         buyableSpan.textContent = buyable.length;
