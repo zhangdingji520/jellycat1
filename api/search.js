@@ -1,5 +1,6 @@
 // api/search.js
 export default async function handler(req, res) {
+  // 仅允许 POST 请求
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
-  // ================== 黑名单 ==================
+  // ================== 黑名单（域名关键词） ==================
   const EXCLUDE_DOMAINS = [
     "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
     "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -38,9 +39,8 @@ export default async function handler(req, res) {
     "temporalmente no disponible", "artículo agotado", "no hay stock",
     "esaurito",
     "this product is no longer in stock",
-    "dieser artikel steht derzeit nicht zur verfügung"   // 新增
-
-    "PARA VER EL PRECIO Y COMPRAR ESTE PRODUCTO DEBES REGISTRARTE COMO PROFESIONAL" 
+    "dieser artikel steht derzeit nicht zur verfügung",
+    "para ver el precio y comprar este producto debes registrarte como profesional"   // 新增
   ];
 
   const IN_STOCK_KEYWORDS = [
@@ -54,26 +54,38 @@ export default async function handler(req, res) {
   ];
 
   try {
+    // 1. 调用 Serper API
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ q: query, gl: country, num: 20 }),
     });
-    const data = await serperRes.json();
-    const rawUrls = (data.organic || []).map(item => item.link).filter(Boolean);
 
+    // 检查 Serper API 是否成功响应
+    if (!serperRes.ok) {
+      console.error(`Serper API error: ${serperRes.status} ${serperRes.statusText}`);
+      return res.status(200).json({ results: [] });
+    }
+
+    const data = await serperRes.json();
+    const rawUrls = (data.organic && Array.isArray(data.organic))
+      ? data.organic.map(item => item.link).filter(Boolean)
+      : [];
+
+    // 2. 域名去重 + 黑名单过滤
     const domainMap = new Map();
     for (const url of rawUrls) {
       if (EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain))) continue;
       try {
         const host = new URL(url).hostname.replace(/^www\./, '');
         if (!domainMap.has(host)) domainMap.set(host, url);
-      } catch {}
+      } catch (e) {}
     }
     const uniqueUrls = Array.from(domainMap.values());
     const MAX_VERIFY = 20;
     const urlsToCheck = uniqueUrls.slice(0, MAX_VERIFY);
 
+    // 3. 并发验证每个页面
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
@@ -96,6 +108,7 @@ export default async function handler(req, res) {
         }
         return { url, status: 'unknown' };
       } catch (err) {
+        console.error(`验证失败 ${url}:`, err.message);
         return { url, status: 'unknown' };
       }
     };
@@ -110,6 +123,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ results });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('Handler error:', err);
+    res.status(200).json({ results: [] });
   }
 }
