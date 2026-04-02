@@ -136,7 +136,8 @@
 
         <div class="form-group">
             <label>🎯 目标独立站数量</label>
-            <input type="number" id="target" value="100" min="10" max="500" step="10">
+            <input type="number" id="target" value="20" min="1" max="500" step="10">
+            <div class="subnote">默认20，空值会自动设为20</div>
         </div>
 
         <div class="form-group">
@@ -209,6 +210,7 @@
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
     const skuInput = document.getElementById('skuInput');
     const upcInput = document.getElementById('upcInput');
+    const targetInput = document.getElementById('target');
 
     let currentTask = null;
     let shouldStop = false;
@@ -273,6 +275,15 @@
         return [...new Map(kwList.map(k => [k, k])).values()];
     }
 
+    function getTarget() {
+        let val = parseInt(targetInput.value);
+        if (isNaN(val) || val < 1) {
+            val = 20;
+            targetInput.value = 20;
+        }
+        return val;
+    }
+
     function displayResults(results, usdExcluded) {
         const buyable = results.filter(r => r.status === 'buyable').map(r => r.url);
         const soldOut = results.filter(r => r.status === 'sold_out').map(r => r.url);
@@ -333,7 +344,7 @@
         if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
         const keywords = buildKeywords();
         if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
-        const target = parseInt(document.getElementById('target').value) || 100;
+        const target = getTarget();
         const proxyUrl = proxyUrlInput.value.trim();
         if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
 
@@ -346,7 +357,7 @@
         resultArea.style.display = 'none';
         logArea.style.display = 'block';
         clearLog();
-        addLog('✨ 开始寻宝之旅 ✨');
+        addLog(`✨ 开始寻宝之旅，目标 ${target} 个独立站 ✨`);
 
         let allResults = [];
         let totalRequests = 0;
