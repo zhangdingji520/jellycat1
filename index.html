@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat小窝 · </title>
+    <title>🐰 Jellycat 小窝 · 智能寻宝</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -85,6 +85,7 @@
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
         @media (max-width: 480px) { .checkbox-group { grid-template-columns: repeat(2,1fr); } }
+        .subnote { font-size: 0.7rem; color: #b7916e; margin-top: 0.4rem; }
     </style>
 </head>
 <body>
@@ -94,68 +95,78 @@
         <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
     </div>
     <div class="content">
+        <!-- Serper API 密钥 -->
         <div class="form-group">
             <label>🔑 Serper API 密钥</label>
-            <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f1" value="">
+            <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
             <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank">serper.dev</a>，每月 2500 次搜索</div>
         </div>
+
+        <!-- 国家复选框（按指定顺序） -->
         <div class="form-group">
             <label>🌍 选择国家（可多选）</label>
-       <div class="checkbox-group" id="countryCheckboxes">
-    <!-- 两个字的国家（左侧） -->
-    <label><input type="checkbox" value="DE" checked> 🇩🇪 德国</label>
-
-    <label><input type="checkbox" value="ES" checked> 🇪🇸 西班牙</label>
-
-    <label><input type="checkbox" value="FR" checked> 🇫🇷 法国</label>
-
-    <label><input type="checkbox" value="IT" checked> 🇮🇹 意大利</label>
-
-    <label><input type="checkbox" value="NL" checked> 🇳🇱 荷兰</label>
-
-    <label><input type="checkbox" value="BE" checked> 🇧🇪 比利时</label>
-
-    <label><input type="checkbox" value="PL" checked> 🇵🇱 波兰</label>
-
-   <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
-
-    <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
-
-    <label><input type="checkbox" value="AT"> 🇦🇹 奥地利</label>
-
-    <label><input type="checkbox" value="CH"> 🇨🇭 瑞士</label>
-
-    <label><input type="checkbox" value="LU"> 🇱🇺 卢森堡</label>   <!-- 新增 -->
-
-    
-
-</div>
-
-
+            <div class="checkbox-group" id="countryCheckboxes">
+                <label><input type="checkbox" value="DE" checked> 🇩🇪 德国</label>
+                <label><input type="checkbox" value="ES" checked> 🇪🇸 西班牙</label>
+                <label><input type="checkbox" value="FR" checked> 🇫🇷 法国</label>
+                <label><input type="checkbox" value="IT" checked> 🇮🇹 意大利</label>
+                <label><input type="checkbox" value="NL" checked> 🇳🇱 荷兰</label>
+                <label><input type="checkbox" value="BE" checked> 🇧🇪 比利时</label>
+                <label><input type="checkbox" value="PL" checked> 🇵🇱 波兰</label>
+                <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
+                <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
+                <label><input type="checkbox" value="AT"> 🇦🇹 奥地利</label>
+                <label><input type="checkbox" value="CH"> 🇨🇭 瑞士</label>
+                <label><input type="checkbox" value="LU"> 🇱🇺 卢森堡</label>
+            </div>
         </div>
+
+        <!-- 搜索关键词（主关键词） -->
         <div class="form-group">
             <label>🔍 搜索关键词（英文逗号分隔）</label>
             <input type="text" id="keywords" value="jellycat nesting bunnies,jellycat stacking bunnies">
         </div>
+
+        <!-- SKU 码输入框 -->
+        <div class="form-group">
+            <label>🏷️ SKU 码（单个）</label>
+            <input type="text" id="skuInput" placeholder="例如:WEE6PN">
+        </div>
+
+        <!-- UPC 码输入框 -->
+        <div class="form-group">
+            <label>📦 UPC 码（单个）</label>
+            <input type="text" id="upcInput" placeholder="例如:670983148565">
+        </div>
+
+        <!-- 目标数量 -->
         <div class="form-group">
             <label>🎯 目标独立站数量</label>
             <input type="number" id="target" value="100" min="10" max="500" step="10">
         </div>
+
+        <!-- 后端代理地址 -->
         <div class="form-group">
             <label>🖥️ 后端代理地址</label>
             <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
             <div class="subnote">📡 请使用你自己的后端地址</div>
         </div>
+
+        <!-- 控制按钮 -->
         <div class="button-group">
-            <button id="startBtn" class="btn">🚀 开始</button>
+            <button id="startBtn" class="btn">🚀 开始寻宝</button>
             <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
             <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
         </div>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
+
+        <!-- 日志区域 -->
         <div id="logArea" class="log-area" style="display:none;">
             <div class="log-title">📋 寻宝日志</div>
             <div id="logContent" class="log-content"></div>
         </div>
+
+        <!-- 结果区域 -->
         <div id="resultArea" style="display:none;">
             <div class="stats">
                 <div class="stat-item"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
@@ -175,7 +186,7 @@
 </div>
 
 <script>
-    // ================== 黑名单 ==================
+    // 黑名单（与后端保持一致）
     const EXCLUDE_DOMAINS = [
         "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
         "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -205,7 +216,11 @@
     const buyableListDiv = document.getElementById('buyableList');
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
 
-    let currentBuyableUrls = [];
+    // 额外关键词输入框
+    const skuInput = document.getElementById('skuInput');
+    const upcInput = document.getElementById('upcInput');
+
+    // 任务控制变量
     let currentTask = null;
     let shouldStop = false;
     let isPaused = false;
@@ -255,6 +270,27 @@
         URL.revokeObjectURL(url);
     }
 
+    // 构建完整的关键词列表（主关键词 + SKU + UPC）
+    function buildKeywords() {
+        let kwList = [];
+        const mainKw = document.getElementById('keywords').value;
+        if (mainKw.trim()) {
+            kwList.push(...mainKw.split(',').map(k => k.trim()).filter(k => k));
+        }
+        const sku = skuInput.value.trim();
+        if (sku) {
+            kwList.push(...sku.split(',').map(k => k.trim()).filter(k => k));
+        }
+        const upc = upcInput.value.trim();
+        if (upc) {
+            kwList.push(...upc.split(',').map(k => k.trim()).filter(k => k));
+        }
+        // 去重（保留顺序）
+        return [...new Map(kwList.map(k => [k, k])).values()];
+    }
+
+    let currentBuyableUrls = [];
+
     async function startSearch() {
         if (currentTask) {
             shouldStop = true;
@@ -269,9 +305,8 @@
         if (!apiKey) { showError('🐣 请先填写 Serper API 密钥～'); return; }
         const countries = getSelectedCountries();
         if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
-        const keywordsRaw = document.getElementById('keywords').value;
-        const keywords = keywordsRaw.split(',').map(k => k.trim()).filter(k => k);
-        if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词'); return; }
+        const keywords = buildKeywords();
+        if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
         const target = parseInt(document.getElementById('target').value) || 100;
         const proxyUrl = proxyUrlInput.value.trim();
         if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
