@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat 小窝 · 智能搜索（可暂停）</title>
+    <title>🐰 Jellycat 小窝 · 智能搜索（可暂停+黑名单）</title>
     <style>
         * {
             margin: 0;
@@ -347,6 +347,23 @@
 </div>
 
 <script>
+    // ================== 黑名单配置 ==================
+    const EXCLUDE_DOMAINS = [
+        "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
+        "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
+        "bol.com", "aliexpress", "cdiscount", "fnac", "darty", "otto",
+        "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
+        "hood.de", "kleinanzeigen",
+        "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
+        "jellyjournal.com", "lilietmilou.com", "ubuy"
+    ];
+
+    // 检查 URL 是否在黑名单中
+    function isExcludedUrl(url) {
+        const lowerUrl = url.toLowerCase();
+        return EXCLUDE_DOMAINS.some(domain => lowerUrl.includes(domain));
+    }
+
     const apiKeyInput = document.getElementById('apiKey');
     const proxyUrlInput = document.getElementById('proxyUrl');
     const startBtn = document.getElementById('startBtn');
@@ -455,18 +472,24 @@
                     }
                     const data = await response.json();
                     if (data.results && Array.isArray(data.results)) {
-                        addLog(`📦 收到 ${data.results.length} 个原始结果（含重复）`);
+                        let filteredCount = 0;
+                        // 过滤黑名单，并去重域名
                         const domainMap = new Map();
                         for (const item of data.results) {
+                            if (isExcludedUrl(item.url)) {
+                                filteredCount++;
+                                continue;
+                            }
                             try {
                                 const host = new URL(item.url).hostname.replace(/^www\./, '');
                                 if (!domainMap.has(host)) domainMap.set(host, item);
                             } catch(e) {}
                         }
                         const newItems = Array.from(domainMap.values());
+                        addLog(`📦 收到 ${data.results.length} 个原始结果，过滤掉 ${filteredCount} 个黑名单网站，剩余 ${newItems.length} 个有效独立域名`);
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
-                        addLog(`✨ 去重后新增 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                        addLog(`✨ 新增 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                         if (allResults.length >= target) {
                             addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
                             stopCollect = true;
