@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     "sem stock", "temporariamente indisponível", "produto esgotado",
     "agotado", "sin stock", "no disponible", "fuera de stock",
     "temporalmente no disponible", "artículo agotado", "no hay stock",
-    "esaurito", "Currently not in stock",
+    "esaurito", "Currently not in stock","esaurito",
     "this product is no longer in stock",
     "dieser artikel steht derzeit nicht zur verfügung",
     "para ver el precio y comprar este producto debes registrarte como profesional"   // 新增
