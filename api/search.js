@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-    "jellyjournal.com", "lilietmilou.com", "ubuy"
+    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey"
   ];
 
   // ================== 多语言缺货关键词（你提供的完整列表） ==================
@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     "esgotado", "fora de stock", "indisponível", "não disponível",
     "sem stock", "temporariamente indisponível", "produto esgotado",
     "agotado", "sin stock", "no disponible", "fuera de stock",
-    "temporalmente no disponible", "artículo agotado", "no hay stock"
+    "temporalmente no disponible", "artículo agotado", "no hay stock", "Esaurito"
   ];
 
   const IN_STOCK_KEYWORDS = [
