@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat）</title>
+    <title>🐰 Jellycat 小窝 · 智能搜索（可保存链接+序号）</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -24,8 +24,9 @@
         .stat-item { background: #fef5ea; border-radius: 2rem; padding: 0.6rem 1.2rem; text-align: center; flex: 1; min-width: 90px; border: 1px solid #ffeedd; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #7b5a3e; }
         .url-list { background: #fffcf8; border-radius: 1.5rem; border: 1px solid #ffe8da; max-height: 400px; overflow-y: auto; padding: 0.5rem; }
-        .url-item { padding: 0.7rem 1rem; border-bottom: 1px solid #ffedd9; word-break: break-all; }
-        .url-item a { color: #b2722e; text-decoration: none; }
+        .url-item { padding: 0.7rem 1rem; border-bottom: 1px solid #ffedd9; word-break: break-all; display: flex; align-items: baseline; gap: 0.5rem; }
+        .url-item .index { font-weight: bold; color: #e9a26c; min-width: 2rem; }
+        .url-item a { color: #b2722e; text-decoration: none; word-break: break-all; }
         .log-area { margin-top: 1.5rem; background: #fffaf5; border-radius: 1.5rem; border: 1px solid #ffe8da; padding: 1rem; }
         .log-content { background: #fef7f0; border-radius: 1rem; padding: 0.75rem; max-height: 200px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; }
         .log-line { border-bottom: 1px solid #ffedd9; padding: 0.2rem 0; white-space: pre-wrap; }
@@ -41,7 +42,7 @@
 <body>
 <div class="card">
     <div class="header">
-        <h1>🐣 Jellycat寻宝</h1>
+        <h1>🐣 Jellycat 小窝 · 智能寻宝</h1>
         <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
     </div>
     <div class="content">
@@ -137,7 +138,7 @@
     const buyableListDiv = document.getElementById('buyableList');
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
 
-    // 存储当前可购买的 URL 列表（用于保存）
+    // 存储当前可购买的 URL 列表（用于导出）
     let currentBuyableUrls = [];
 
     // 任务控制变量
@@ -173,7 +174,7 @@
         }
     }
 
-    // 保存链接功能
+    // 保存链接功能（仅保存网址，不带序号）
     function saveUrlsToFile() {
         if (currentBuyableUrls.length === 0) {
             alert('没有可购买的链接，请先搜索。');
@@ -215,7 +216,7 @@
         startBtn.disabled = true;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
-        saveUrlsBtn.disabled = true;  // 搜索开始时禁用保存按钮
+        saveUrlsBtn.disabled = true;
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
         logArea.style.display = 'block';
@@ -308,8 +309,7 @@
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
 
-        // 保存可购买链接供导出使用
-        currentBuyableUrls = buyable;
+        currentBuyableUrls = buyable;  // 保存供导出
 
         totalSpan.textContent = allResults.length;
         buyableSpan.textContent = buyable.length;
@@ -322,12 +322,21 @@
             buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
             saveUrlsBtn.disabled = true;
         } else {
-            for (const url of buyable) {
+            buyable.forEach((url, idx) => {
                 const div = document.createElement('div');
                 div.className = 'url-item';
-                div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+                const indexSpan = document.createElement('span');
+                indexSpan.className = 'index';
+                indexSpan.textContent = `${idx+1}.`;
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = url;
+                div.appendChild(indexSpan);
+                div.appendChild(link);
                 buyableListDiv.appendChild(div);
-            }
+            });
             saveUrlsBtn.disabled = false;
         }
 
