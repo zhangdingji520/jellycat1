@@ -216,7 +216,7 @@
     let shouldStop = false;
     let isPaused = false;
     let resumeResolver = null;
-    let collectedResults = [];       // 存储 {url, status}
+    let collectedResults = [];       // 存储 {url, status}（最新已收集的结果）
     let currentUsdExcluded = 0;     // 累计排除的美元站数量
     let currentBuyableUrls = [];
 
@@ -275,7 +275,6 @@
         return [...new Map(kwList.map(k => [k, k])).values()];
     }
 
-    // 获取有效目标数量，无效时提示并返回默认值20
     function getValidTarget() {
         let raw = targetInput.value.trim();
         if (raw === "") {
@@ -292,13 +291,23 @@
         return val;
     }
 
+    // 显示结果（并对可购买链接去重）
     function displayResults(results, usdExcluded) {
-        const buyable = results.filter(r => r.status === 'buyable').map(r => r.url);
-        const soldOut = results.filter(r => r.status === 'sold_out').map(r => r.url);
-        const unknown = results.filter(r => r.status === 'unknown').map(r => r.url);
+        // 对结果中的 URL 进行去重（防止同一网址出现多次）
+        const uniqueMap = new Map(); // url -> status
+        for (const r of results) {
+            if (!uniqueMap.has(r.url)) {
+                uniqueMap.set(r.url, r.status);
+            }
+        }
+        const uniqueResults = Array.from(uniqueMap.entries()).map(([url, status]) => ({ url, status }));
+        
+        const buyable = uniqueResults.filter(r => r.status === 'buyable').map(r => r.url);
+        const soldOut = uniqueResults.filter(r => r.status === 'sold_out').map(r => r.url);
+        const unknown = uniqueResults.filter(r => r.status === 'unknown').map(r => r.url);
         currentBuyableUrls = buyable;
 
-        totalSpan.textContent = results.length;
+        totalSpan.textContent = uniqueResults.length;
         buyableSpan.textContent = buyable.length;
         soldOutSpan.textContent = soldOut.length;
         unknownSpan.textContent = unknown.length;
@@ -339,7 +348,6 @@
             return;
         }
 
-        // 检查并获取有效目标数量
         const target = getValidTarget();
 
         if (currentTask) {
@@ -361,7 +369,7 @@
         startBtn.disabled = true;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
-        detectBtn.disabled = true;
+        detectBtn.disabled = true;   // 搜索开始时禁用检测按钮
         saveUrlsBtn.disabled = true;
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
@@ -439,19 +447,21 @@
             return;
         }
 
+        // 保存最新收集的结果（供检测按钮使用）
+        collectedResults = allResults;
+
         if (shouldStop) {
             addLog("任务已停止", true);
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             resumeBtn.disabled = true;
-            detectBtn.disabled = false;   // 允许检测已收集的结果
+            detectBtn.disabled = false;   // 停止后可以检测已收集的结果
             saveUrlsBtn.disabled = true;
-            collectedResults = allResults;
             currentTask = null;
             return;
         }
 
-        // 正常结束
+        // 正常结束（达到目标或遍历完）
         addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
         displayResults(allResults, currentUsdExcluded);
         startBtn.disabled = false;
@@ -461,6 +471,7 @@
         currentTask = null;
     }
 
+    // 检测已收集的结果（无需继续搜索）
     function detectCollected() {
         if (!collectedResults || collectedResults.length === 0) {
             addLog("没有已收集的网址，请先开始搜索并暂停/停止。", true);
@@ -471,10 +482,16 @@
     }
 
     function pauseSearch() {
-        if (startBtn.disabled === false) return;
+        if (startBtn.disabled === false) return; // 未运行
         isPaused = true;
         pauseBtn.disabled = true;
         resumeBtn.disabled = false;
+        // 暂停时，如果已有收集结果，则启用检测按钮
+        if (collectedResults && collectedResults.length > 0) {
+            detectBtn.disabled = false;
+        } else {
+            detectBtn.disabled = true;
+        }
         addLog("⏸️ 已暂停，点击「继续」恢复...");
     }
 
@@ -484,6 +501,7 @@
         isPaused = false;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
+        detectBtn.disabled = true;   // 继续后禁用检测按钮，直到再次暂停或停止
         addLog("▶️ 继续运行...");
         if (resumeResolver) {
             resumeResolver();
