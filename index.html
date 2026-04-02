@@ -26,27 +26,47 @@
         .checkbox-group label {
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.4rem;
             font-weight: normal;
             cursor: pointer;
             background: #ffffff;
-            padding: 0.3rem 0.8rem;
+            padding: 0.3rem 0.5rem;
             border-radius: 2rem;
             transition: all 0.2s;
             margin: 0;
             font-size: 0.9rem;
             color: #6b4c34;
             border: 1px solid #ffdeca;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            white-space: normal;
+            word-break: keep-all;
+            text-align: center;
+            min-width: 0;
+            flex: 1;
         }
         .checkbox-group label:hover { background: #ffefe3; border-color: #f7b787; }
         .checkbox-group input { width: auto; margin: 0; accent-color: #e9a26c; flex-shrink: 0; }
         .button-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
-        .btn { background: #e9a26c; color: white; border: none; padding: 0.9rem; border-radius: 2rem; font-weight: bold; cursor: pointer; flex: 1; }
-        .btn:hover { background: #dc8b4f; }
-        .btn:disabled { background: #d9c2ae; cursor: not-allowed; }
+        .btn {
+            background: #e9a26c;
+            color: white;
+            border: none;
+            padding: 0.9rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            line-height: 1;
+        }
+        .btn:hover { background: #dc8b4f; transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .btn:disabled { background: #d9c2ae; cursor: not-allowed; transform: none; }
         .stats { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 1.5rem; }
         .stat-item { background: #fef5ea; border-radius: 2rem; padding: 0.6rem 1.2rem; text-align: center; flex: 1; min-width: 90px; border: 1px solid #ffeedd; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #7b5a3e; }
@@ -60,7 +80,7 @@
         .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
         .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
         .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; }
-        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; }
+        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
         .save-btn:hover { background: #8bb891; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
@@ -92,6 +112,7 @@
                 <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
                 <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
                 <label><input type="checkbox" value="CH"> 🇨🇭 瑞士</label>
+                <label><input type="checkbox" value="AT"> 🇦🇹 奥地利</label>
             </div>
         </div>
         <div class="form-group">
