@@ -216,8 +216,8 @@
     let shouldStop = false;
     let isPaused = false;
     let resumeResolver = null;
-    let collectedResults = [];       // 存储 {url, status}（最新已收集的结果）
-    let currentUsdExcluded = 0;     // 累计排除的美元站数量
+    let collectedResults = [];
+    let currentUsdExcluded = 0;
     let currentBuyableUrls = [];
 
     function addLog(msg, isError = false) {
@@ -291,10 +291,8 @@
         return val;
     }
 
-    // 显示结果（并对可购买链接去重）
     function displayResults(results, usdExcluded) {
-        // 对结果中的 URL 进行去重（防止同一网址出现多次）
-        const uniqueMap = new Map(); // url -> status
+        const uniqueMap = new Map();
         for (const r of results) {
             if (!uniqueMap.has(r.url)) {
                 uniqueMap.set(r.url, r.status);
@@ -340,7 +338,6 @@
     }
 
     async function startSearch() {
-        // 检查 API 密钥
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) {
             alert('🐣 请先填写 Serper API 密钥！');
@@ -369,7 +366,7 @@
         startBtn.disabled = true;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
-        detectBtn.disabled = true;   // 搜索开始时禁用检测按钮
+        detectBtn.disabled = true;
         saveUrlsBtn.disabled = true;
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
@@ -423,6 +420,8 @@
                         const newItems = Array.from(domainMap.values());
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
+                        // 关键：每次更新后保存当前结果
+                        collectedResults = [...allResults];
                         addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                         if (allResults.length >= target) {
                             addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
@@ -447,7 +446,6 @@
             return;
         }
 
-        // 保存最新收集的结果（供检测按钮使用）
         collectedResults = allResults;
 
         if (shouldStop) {
@@ -455,13 +453,12 @@
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             resumeBtn.disabled = true;
-            detectBtn.disabled = false;   // 停止后可以检测已收集的结果
+            detectBtn.disabled = false;
             saveUrlsBtn.disabled = true;
             currentTask = null;
             return;
         }
 
-        // 正常结束（达到目标或遍历完）
         addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
         displayResults(allResults, currentUsdExcluded);
         startBtn.disabled = false;
@@ -471,7 +468,6 @@
         currentTask = null;
     }
 
-    // 检测已收集的结果（无需继续搜索）
     function detectCollected() {
         if (!collectedResults || collectedResults.length === 0) {
             addLog("没有已收集的网址，请先开始搜索并暂停/停止。", true);
@@ -482,11 +478,10 @@
     }
 
     function pauseSearch() {
-        if (startBtn.disabled === false) return; // 未运行
+        if (startBtn.disabled === false) return;
         isPaused = true;
         pauseBtn.disabled = true;
         resumeBtn.disabled = false;
-        // 暂停时，启用检测按钮（无论是否有结果，点击时内部会判断）
         detectBtn.disabled = false;
         addLog("⏸️ 已暂停，点击「继续」恢复...");
     }
@@ -497,7 +492,7 @@
         isPaused = false;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
-        detectBtn.disabled = true;   // 继续后禁用检测按钮，直到再次暂停或停止
+        detectBtn.disabled = true;
         addLog("▶️ 继续运行...");
         if (resumeResolver) {
             resumeResolver();
