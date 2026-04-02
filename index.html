@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat 小窝 · 智能寻宝（手动检测）</title>
+    <title>🐰 Jellycat 小窝 · 智能寻宝</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -46,27 +46,39 @@
         }
         .checkbox-group label:hover { background: #ffefe3; border-color: #f7b787; }
         .checkbox-group input { width: auto; margin: 0; accent-color: #e9a26c; flex-shrink: 0; }
-        .button-group { display: flex; gap: 1rem; margin-bottom: 1rem; }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
         .btn {
             background: #e9a26c;
             color: white;
             border: none;
-            padding: 0.9rem 1.5rem;
+            padding: 0.7rem 0.5rem;
             border-radius: 2rem;
             font-weight: bold;
-            font-size: 1rem;
+            font-size: 0.95rem;
             cursor: pointer;
             flex: 1;
+            min-width: 80px;
             transition: all 0.2s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.05);
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 0.5rem;
-            line-height: 1;
+            gap: 0.4rem;
+            line-height: 1.2;
+            white-space: nowrap;
         }
         .btn:hover { background: #dc8b4f; transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
         .btn:disabled { background: #d9c2ae; cursor: not-allowed; transform: none; }
+        @media (max-width: 550px) {
+            .btn { white-space: normal; font-size: 0.85rem; padding: 0.6rem 0.3rem; min-width: 70px; }
+            .button-group { gap: 0.5rem; }
+        }
         .stats { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 1.5rem; }
         .stat-item { background: #fef5ea; border-radius: 2rem; padding: 0.6rem 1.2rem; text-align: center; flex: 1; min-width: 90px; border: 1px solid #ffeedd; }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #7b5a3e; }
@@ -79,13 +91,13 @@
         .log-line { border-bottom: 1px solid #ffedd9; padding: 0.2rem 0; white-space: pre-wrap; }
         .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
         .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
-        .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; }
+        .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
         .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
         .save-btn:hover { background: #8bb891; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .subnote { font-size: 0.7rem; color: #b7916e; margin-top: 0.4rem; }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
         @media (max-width: 480px) { .checkbox-group { grid-template-columns: repeat(2,1fr); } }
-        .subnote { font-size: 0.7rem; color: #b7916e; margin-top: 0.4rem; }
     </style>
 </head>
 <body>
@@ -458,7 +470,14 @@
             return;
         }
 
-        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，请点击「检测库存」查看结果`);
+        if (allResults.length < target) {
+            addLog(`🏁 搜索结束，仅收集到 ${allResults.length} 个独立域名（未达到目标 ${target}）。`);
+            addLog(`💡 提示：请增加更多搜索关键词、SKU 或 UPC 码，或勾选更多国家，然后重新开始搜索。`);
+        } else {
+            addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，已达到目标 ${target}。`);
+        }
+        addLog(`请点击「检测库存」查看结果。`);
+        
         detectBtn.disabled = false;
         startBtn.disabled = false;
         pauseBtn.disabled = true;
