@@ -177,7 +177,7 @@
 </div>
 
 <script>
-    // 黑名单（与后端保持一致）
+    // 黑名单
     const EXCLUDE_DOMAINS = [
         "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
         "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -207,7 +207,6 @@
     const usdSpan = document.getElementById('usdCount');
     const buyableListDiv = document.getElementById('buyableList');
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
-
     const skuInput = document.getElementById('skuInput');
     const upcInput = document.getElementById('upcInput');
 
@@ -215,10 +214,9 @@
     let shouldStop = false;
     let isPaused = false;
     let resumeResolver = null;
-
-    // 存储已收集的结果（用于检测按钮）
-    let collectedResults = [];      // 存储 { url, status } 对象（初始 status 可能为空，检测后更新）
-    let collectedDomainUrls = [];   // 存储 URL 字符串（用于检测）
+    let collectedResults = [];       // 存储 {url, status}
+    let currentUsdExcluded = 0;     // 累计排除的美元站数量
+    let currentBuyableUrls = [];
 
     function addLog(msg, isError = false) {
         const line = document.createElement('div');
@@ -275,39 +273,53 @@
         return [...new Map(kwList.map(k => [k, k])).values()];
     }
 
-    let currentBuyableUrls = [];
+    function displayResults(results, usdExcluded) {
+        const buyable = results.filter(r => r.status === 'buyable').map(r => r.url);
+        const soldOut = results.filter(r => r.status === 'sold_out').map(r => r.url);
+        const unknown = results.filter(r => r.status === 'unknown').map(r => r.url);
+        currentBuyableUrls = buyable;
 
-    // 库存检测函数（独立于搜索）
-    async function performDetection(urls) {
-        addLog(`🔍 开始检测库存（共 ${urls.length} 个网址）...`);
-        const results = [];
-        for (let i = 0; i < urls.length; i++) {
-            const url = urls[i];
-            addLog(`  检测 ${i+1}/${urls.length}: ${url}`);
-            const status = await checkPage(url);
-            results.push({ url, status });
+        totalSpan.textContent = results.length;
+        buyableSpan.textContent = buyable.length;
+        soldOutSpan.textContent = soldOut.length;
+        unknownSpan.textContent = unknown.length;
+        usdSpan.textContent = usdExcluded;
+
+        buyableListDiv.innerHTML = '';
+        if (buyable.length === 0) {
+            buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
+            saveUrlsBtn.disabled = true;
+        } else {
+            buyable.forEach((url, idx) => {
+                const div = document.createElement('div');
+                div.className = 'url-item';
+                const indexSpan = document.createElement('span');
+                indexSpan.className = 'index';
+                indexSpan.textContent = `${idx+1}.`;
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = url;
+                div.appendChild(indexSpan);
+                div.appendChild(link);
+                buyableListDiv.appendChild(div);
+            });
+            saveUrlsBtn.disabled = false;
         }
-        return results;
+        resultArea.style.display = 'block';
+        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，累计排除美元站: ${usdExcluded}`);
     }
 
-    // 单个页面检测（调用后端或直接请求？为了统一，这里调用后端？但后端已提供检测，我们可以直接使用已有的 verify 逻辑？不，为了复用，我们直接调用后端？但后端接口是搜索+检测一体的，不适合单独检测。
-    // 更好的方法：前端直接请求页面并检测（跨域问题）。实际上我们的后端已经具备检测能力，但是需要重新构造请求。为了简化，我们可以在前端调用相同的后端，但需要传递一个特殊标记？
-    // 更简单：直接在前端用 fetch 请求页面内容，并检测缺货关键词（前端跨域问题无法解决）。所以必须通过后端。
-    // 解决方案：在后端增加一个专门用于检测库存的接口（例如 /api/check），或者复用 /api/search 但传入 query 为空？不可行。
-    // 既然前端已经收集到了 URL，我们可以将这些 URL 发送到后端的一个新接口，让后端验证。
-    // 但是为了不增加复杂度，我们可以利用现有的后端接口，将每个 URL 作为 query 参数（但 Serper 接口需要搜索词，不合适）。
-    // 因此，我们只能在前端模拟检测（受跨域限制）。实际上，之前的库存检测是由后端在搜索时一并完成的，所以我们不能单独检测已收集的 URL。
-    // 但是用户的需求是“对已收集的25个网址进行库存检测”，这些网址之前并没有经过后端验证（因为搜索过程中后端返回的 item 中已经包含了 status？实际上，在搜索过程中，后端返回的 data.results 已经包含了每个 URL 的 status（因为后端在返回前已经验证了）。
-    // 仔细看代码：后端在返回结果时，已经对每个 URL 进行了验证（verifyPage），所以前端收到的 data.results 中的每个 item 都带有 status。
-    // 因此，在搜索过程中，collectedResults 其实已经包含了 status（只要我们从 data.results 中保存下来）。我们之前并没有保存 status，只保存了 URL。现在可以改进：在收集阶段，不仅保存 URL，还保存对应的 status。
-    // 这样，“检测”按钮实际上只是重新整理和显示结果，无需再次请求网络。
-    // 因此，我们修改收集逻辑：在添加 newItems 时，同时保存每个 item 的 url 和 status（status 已经由后端提供）。检测按钮只需将已收集的结果重新分类并显示。
-    // 这样完全满足需求，且无需额外网络请求。
-    // 以下实现这一改进。
-    // 我们会在 startSearch 中，将每次收到的 data.results 中的有效 item（去重后）保存到 collectedResults 数组（每个元素为 {url, status}）。
-    // 检测按钮直接对这些结果进行分类显示。
-
     async function startSearch() {
+        // 检查 API 密钥
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            alert('🐣 请先填写 Serper API 密钥！');
+            showError('🐣 请先填写 Serper API 密钥～');
+            return;
+        }
+
         if (currentTask) {
             shouldStop = true;
             if (resumeResolver) resumeResolver();
@@ -317,8 +329,6 @@
         isPaused = false;
         if (resumeResolver) resumeResolver = null;
 
-        const apiKey = apiKeyInput.value.trim();
-        if (!apiKey) { showError('🐣 请先填写 Serper API 密钥～'); return; }
         const countries = getSelectedCountries();
         if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
         const keywords = buildKeywords();
@@ -330,7 +340,7 @@
         startBtn.disabled = true;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
-        detectBtn.disabled = true;   // 开始新搜索时禁用检测按钮
+        detectBtn.disabled = true;
         saveUrlsBtn.disabled = true;
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
@@ -338,10 +348,10 @@
         clearLog();
         addLog('✨ 开始寻宝之旅 ✨');
 
-        let allResults = [];          // 存储 {url, status}
+        let allResults = [];
         let totalRequests = 0;
         let stopCollect = false;
-        let totalUsdExcluded = 0;
+        currentUsdExcluded = 0;
 
         try {
             for (const country of countries) {
@@ -365,7 +375,7 @@
                     if (data.results && Array.isArray(data.results)) {
                         let filteredBlacklist = 0;
                         let usdThisBatch = 0;
-                        const domainMap = new Map(); // key: domain, value: {url, status}
+                        const domainMap = new Map();
                         for (const item of data.results) {
                             if (isExcludedUrl(item.url)) {
                                 filteredBlacklist++;
@@ -373,7 +383,7 @@
                             }
                             if (item.status === 'usd_excluded') {
                                 usdThisBatch++;
-                                totalUsdExcluded++;
+                                currentUsdExcluded++;
                                 continue;
                             }
                             try {
@@ -413,21 +423,16 @@
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             resumeBtn.disabled = true;
-            detectBtn.disabled = false;   // 停止后可以检测已收集的结果
+            detectBtn.disabled = false;   // 允许检测已收集的结果
             saveUrlsBtn.disabled = true;
-            // 保存已收集的结果供检测按钮使用
             collectedResults = allResults;
             currentTask = null;
             return;
         }
 
-        // 正常结束（达到目标或遍历完）
+        // 正常结束
         addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
-        addLog(`🔍 开始检测库存...`);
-
-        // 直接显示结果
-        displayResults(allResults, totalUsdExcluded);
-
+        displayResults(allResults, currentUsdExcluded);
         startBtn.disabled = false;
         pauseBtn.disabled = true;
         resumeBtn.disabled = true;
@@ -435,80 +440,41 @@
         currentTask = null;
     }
 
-    // 显示结果函数（供检测按钮和正常结束共用）
-    function displayResults(results, totalUsdExcluded) {
-        const buyable = results.filter(r => r.status === 'buyable').map(r => r.url);
-        const soldOut = results.filter(r => r.status === 'sold_out').map(r => r.url);
-        const unknown = results.filter(r => r.status === 'unknown').map(r => r.url);
-        // usdExcluded 已经单独统计，不计入 results
-        currentBuyableUrls = buyable;
-
-        totalSpan.textContent = results.length;
-        buyableSpan.textContent = buyable.length;
-        soldOutSpan.textContent = soldOut.length;
-        unknownSpan.textContent = unknown.length;
-        usdSpan.textContent = totalUsdExcluded;
-
-        buyableListDiv.innerHTML = '';
-        if (buyable.length === 0) {
-            buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
-            saveUrlsBtn.disabled = true;
-        } else {
-            buyable.forEach((url, idx) => {
-                const div = document.createElement('div');
-                div.className = 'url-item';
-                const indexSpan = document.createElement('span');
-                indexSpan.className = 'index';
-                indexSpan.textContent = `${idx+1}.`;
-                const link = document.createElement('a');
-                link.href = url;
-                link.target = '_blank';
-                link.rel = 'noopener';
-                link.textContent = url;
-                div.appendChild(indexSpan);
-                div.appendChild(link);
-                buyableListDiv.appendChild(div);
-            });
-            saveUrlsBtn.disabled = false;
-        }
-
-        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，累计排除美元站: ${totalUsdExcluded}`);
-        resultArea.style.display = 'block';
-    }
-
-    // 检测按钮：对已收集的 collectedResults 进行检测（实际上已经带有 status，直接显示）
     function detectCollected() {
         if (!collectedResults || collectedResults.length === 0) {
             addLog("没有已收集的网址，请先开始搜索并暂停/停止。", true);
             return;
         }
         addLog(`🔍 开始检测已收集的 ${collectedResults.length} 个网址...`);
-        displayResults(collectedResults, 0); // 注意：totalUsdExcluded 在收集过程中已累加，但这里简单传0，实际上我们可以在收集时记录。
-        // 为了准确，可以在全局保存 totalUsdExcluded 变量
+        displayResults(collectedResults, currentUsdExcluded);
     }
 
-    // 修改全局变量
-    let globalUsdExcluded = 0;
+    function pauseSearch() {
+        if (startBtn.disabled === false) return;
+        isPaused = true;
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = false;
+        addLog("⏸️ 已暂停，点击「继续」恢复...");
+    }
 
-    // 修改 startSearch 中的 totalUsdExcluded 为全局变量
-    // 并在 displayResults 中使用它
-    // 为了方便，我们重构：将 totalUsdExcluded 作为全局，在 startSearch 中更新，检测按钮调用时使用该值。
+    function resumeSearch() {
+        if (startBtn.disabled === false) return;
+        if (!isPaused) return;
+        isPaused = false;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        addLog("▶️ 继续运行...");
+        if (resumeResolver) {
+            resumeResolver();
+            resumeResolver = null;
+        }
+    }
 
-    // 重新整理 startSearch 中的变量作用域
-    // 由于代码较长，我们直接在全局声明 let currentUsdExcluded = 0; 在 startSearch 中更新，displayResults 中使用。
-
-    // 以下为最终调整（将 totalUsdExcluded 提升为全局）
-    let currentUsdExcluded = 0;
-
-    // 修改 startSearch 中的 totalUsdExcluded 为 currentUsdExcluded
-    // 修改 displayResults 中的 totalUsdExcluded 参数为 currentUsdExcluded
-
-    // 为了完整性，下面给出修改后的 startSearch 关键部分（因为代码已很长，我们在原代码基础上修正）
-    // 但由于时间关系，我会在最终提供的代码中直接包含修正后的完整版本。
-
-    // 由于篇幅，这里不再重复整个脚本，我会直接输出最终的完整 HTML，包含上述所有修正。
-
-    // 最终代码将在下方输出
+    startBtn.addEventListener('click', () => { currentTask = startSearch(); });
+    pauseBtn.addEventListener('click', pauseSearch);
+    resumeBtn.addEventListener('click', resumeSearch);
+    detectBtn.addEventListener('click', detectCollected);
+    saveUrlsBtn.addEventListener('click', saveUrlsToFile);
 </script>
 </body>
 </html>
