@@ -39,6 +39,8 @@ export default async function handler(req, res) {
     "esaurito",
     "this product is no longer in stock",
     "dieser artikel steht derzeit nicht zur verfügung"   // 新增
+
+    "PARA VER EL PRECIO Y COMPRAR ESTE PRODUCTO DEBES REGISTRARTE COMO PROFESIONAL" 
   ];
 
   const IN_STOCK_KEYWORDS = [
