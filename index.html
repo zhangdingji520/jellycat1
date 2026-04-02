@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat小窝 · 智能搜索</title>
+    <title>🐰 Jellycat 小窝 · 智能搜索（可保存链接）</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -31,6 +31,10 @@
         .log-line { border-bottom: 1px solid #ffedd9; padding: 0.2rem 0; white-space: pre-wrap; }
         .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
         .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
+        .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; }
+        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        .save-btn:hover { background: #8bb891; }
+        .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
     </style>
 </head>
@@ -38,7 +42,7 @@
 <div class="card">
     <div class="header">
         <h1>🐣 Jellycat 小窝 · 智能寻宝</h1>
-        <p>搜索欧洲绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
+        <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
     </div>
     <div class="content">
         <div class="form-group">
@@ -92,7 +96,10 @@
                 <div class="stat-item"><div class="stat-number" id="unknownCount">0</div><div class="stat-label">❓ 无法判断</div></div>
                 <div class="stat-item"><div class="stat-number" id="usdCount">0</div><div class="stat-label">💵 已排除美元站</div></div>
             </div>
-            <h3 style="margin: 1rem 0 0.5rem;">✨ 可购买宝贝（点开即达）</h3>
+            <div class="title-row">
+                <h3 style="margin:0;">✨ 可购买宝贝（点开即达）</h3>
+                <button id="saveUrlsBtn" class="save-btn" disabled>💾 保存链接 (.txt)</button>
+            </div>
             <div id="buyableList" class="url-list"><div style="text-align:center; color:#bda48a; padding:2rem;">✨ 点击搜索后，这里会出现可购买链接 ✨</div></div>
         </div>
     </div>
@@ -100,7 +107,7 @@
 </div>
 
 <script>
-    // ================== 黑名单（与后端保持一致） ==================
+    // ================== 黑名单 ==================
     const EXCLUDE_DOMAINS = [
         "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
         "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -128,6 +135,10 @@
     const unknownSpan = document.getElementById('unknownCount');
     const usdSpan = document.getElementById('usdCount');
     const buyableListDiv = document.getElementById('buyableList');
+    const saveUrlsBtn = document.getElementById('saveUrlsBtn');
+
+    // 存储当前可购买的 URL 列表（用于保存）
+    let currentBuyableUrls = [];
 
     // 任务控制变量
     let currentTask = null;
@@ -162,6 +173,24 @@
         }
     }
 
+    // 保存链接功能
+    function saveUrlsToFile() {
+        if (currentBuyableUrls.length === 0) {
+            alert('没有可购买的链接，请先搜索。');
+            return;
+        }
+        const content = currentBuyableUrls.join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jellycat_buyable_links.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
     async function startSearch() {
         if (currentTask) {
             shouldStop = true;
@@ -186,16 +215,17 @@
         startBtn.disabled = true;
         pauseBtn.disabled = false;
         resumeBtn.disabled = true;
+        saveUrlsBtn.disabled = true;  // 搜索开始时禁用保存按钮
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
         logArea.style.display = 'block';
         clearLog();
         addLog('✨ 开始寻宝之旅 ✨');
 
-        let allResults = [];       // 最终保留的有效结果（不包含黑名单、美元网站）
+        let allResults = [];
         let totalRequests = 0;
         let stopCollect = false;
-        let totalUsdExcluded = 0;  // 累计排除的美元站数量
+        let totalUsdExcluded = 0;
 
         try {
             for (const country of countries) {
@@ -225,7 +255,6 @@
                                 filteredBlacklist++;
                                 continue;
                             }
-                            // ★ 关键：排除美元网站（status === 'usd_excluded'）
                             if (item.status === 'usd_excluded') {
                                 usdThisBatch++;
                                 totalUsdExcluded++;
@@ -241,7 +270,7 @@
                         if (allResults.length > target) allResults = allResults.slice(0, target);
                         addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                         if (allResults.length >= target) {
-                            addLog(`👍🏻 已达到目标数量 ${target}，停止搜索`);
+                            addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
                             stopCollect = true;
                             break;
                         }
@@ -257,6 +286,7 @@
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             resumeBtn.disabled = true;
+            saveUrlsBtn.disabled = true;
             currentTask = null;
             return;
         }
@@ -266,6 +296,7 @@
             startBtn.disabled = false;
             pauseBtn.disabled = true;
             resumeBtn.disabled = true;
+            saveUrlsBtn.disabled = true;
             currentTask = null;
             return;
         }
@@ -277,15 +308,19 @@
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
 
+        // 保存可购买链接供导出使用
+        currentBuyableUrls = buyable;
+
         totalSpan.textContent = allResults.length;
         buyableSpan.textContent = buyable.length;
         soldOutSpan.textContent = soldOut.length;
         unknownSpan.textContent = unknown.length;
-        usdSpan.textContent = totalUsdExcluded;   // 显示累计排除的美元站数量
+        usdSpan.textContent = totalUsdExcluded;
 
         buyableListDiv.innerHTML = '';
         if (buyable.length === 0) {
             buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
+            saveUrlsBtn.disabled = true;
         } else {
             for (const url of buyable) {
                 const div = document.createElement('div');
@@ -293,6 +328,7 @@
                 div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
                 buyableListDiv.appendChild(div);
             }
+            saveUrlsBtn.disabled = false;
         }
 
         addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，累计排除美元站: ${totalUsdExcluded}`);
@@ -327,6 +363,7 @@
     startBtn.addEventListener('click', () => { currentTask = startSearch(); });
     pauseBtn.addEventListener('click', pauseSearch);
     resumeBtn.addEventListener('click', resumeSearch);
+    saveUrlsBtn.addEventListener('click', saveUrlsToFile);
 </script>
 </body>
 </html>
