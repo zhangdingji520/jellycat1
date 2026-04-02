@@ -17,10 +17,11 @@ export default async function handler(req, res) {
     "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey"
+    "jellyjournal.com", "lilietmilou.com", "ubuy",
+    "lodenfrey.com"   // 新增
   ];
 
-  // ================== 多语言缺货关键词（你提供的完整列表） ==================
+  // ================== 多语言缺货关键词 ==================
   const SOLD_OUT_KEYWORDS = [
     "sold out", "out of stock", "no stock", "not available", "currently unavailable",
     "ausverkauft", "nicht vorrätig", "nicht auf lager", "momentan nicht verfügbar",
@@ -35,7 +36,8 @@ export default async function handler(req, res) {
     "esgotado", "fora de stock", "indisponível", "não disponível",
     "sem stock", "temporariamente indisponível", "produto esgotado",
     "agotado", "sin stock", "no disponible", "fuera de stock",
-    "temporalmente no disponible", "artículo agotado", "no hay stock", "Esaurito"
+    "temporalmente no disponible", "artículo agotado", "no hay stock",
+    "esaurito"   // 意大利语“售罄”
   ];
 
   const IN_STOCK_KEYWORDS = [
@@ -77,9 +79,9 @@ export default async function handler(req, res) {
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
+        const timeout = setTimeout(() => controller.abort(), 6000);
         const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
           signal: controller.signal,
         });
         clearTimeout(timeout);
@@ -96,6 +98,7 @@ export default async function handler(req, res) {
         }
         return { url, status: 'unknown' };
       } catch (err) {
+        console.error(`验证失败 ${url}:`, err.message);
         return { url, status: 'unknown' };
       }
     };
@@ -110,6 +113,7 @@ export default async function handler(req, res) {
 
     res.status(200).json({ results });
   } catch (err) {
+    console.error('Handler error:', err);
     res.status(500).json({ error: err.message });
   }
 }
