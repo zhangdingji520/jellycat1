@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat 小窝 · 智能搜索（自动检测）</title>
+    <title>🐰 Jellycat 小窝 · 智能搜索（可暂停）</title>
     <style>
         * {
             margin: 0;
@@ -115,6 +115,11 @@
             accent-color: #e9a26c;
         }
 
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
         .btn {
             background: #e9a26c;
             color: white;
@@ -124,7 +129,7 @@
             font-weight: bold;
             font-size: 1rem;
             cursor: pointer;
-            width: 100%;
+            flex: 1;
             transition: all 0.2s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.05);
         }
@@ -310,7 +315,11 @@
             <div class="subnote">📡 如果你有自己的后端，请替换为你的地址</div>
         </div>
 
-        <button id="searchBtn" class="btn">🚀 开始寻宝 · 搜索并检测</button>
+        <div class="button-group">
+            <button id="startBtn" class="btn">🚀 开始寻宝</button>
+            <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
+            <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
+        </div>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
 
         <div id="logArea" class="log-area" style="display:none;">
@@ -340,7 +349,9 @@
 <script>
     const apiKeyInput = document.getElementById('apiKey');
     const proxyUrlInput = document.getElementById('proxyUrl');
-    const searchBtn = document.getElementById('searchBtn');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
     const errorDiv = document.getElementById('errorMsg');
     const resultArea = document.getElementById('resultArea');
     const logArea = document.getElementById('logArea');
@@ -351,6 +362,12 @@
     const unknownSpan = document.getElementById('unknownCount');
     const usdSpan = document.getElementById('usdCount');
     const buyableListDiv = document.getElementById('buyableList');
+
+    // 任务控制变量
+    let currentTask = null;
+    let shouldStop = false;
+    let isPaused = false;
+    let resumeResolver = null;
 
     function addLog(msg, isError = false) {
         const line = document.createElement('div');
@@ -376,7 +393,24 @@
         setTimeout(() => errorDiv.style.display = 'none', 5000);
     }
 
+    async function waitIfPaused() {
+        while (isPaused && !shouldStop) {
+            await new Promise(resolve => {
+                resumeResolver = resolve;
+            });
+        }
+    }
+
     async function startSearch() {
+        if (currentTask) {
+            shouldStop = true;
+            if (resumeResolver) resumeResolver();
+            await currentTask;
+        }
+        shouldStop = false;
+        isPaused = false;
+        if (resumeResolver) resumeResolver = null;
+
         const apiKey = apiKeyInput.value.trim();
         if (!apiKey) { showError('🐣 请先填写 Serper API 密钥～'); return; }
         const countries = getSelectedCountries();
@@ -386,10 +420,11 @@
         if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词'); return; }
         const target = parseInt(document.getElementById('target').value) || 100;
         const proxyUrl = proxyUrlInput.value.trim();
-        if (!proxyUrl) { showError('🖥️ 请填写后端代理地址（例如 https://xxx.vercel.app/api/search）'); return; }
+        if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
 
-        searchBtn.disabled = true;
-        searchBtn.textContent = '⏳ 寻宝中… 正在搜索 & 检测库存';
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
         errorDiv.style.display = 'none';
         resultArea.style.display = 'none';
         logArea.style.display = 'block';
@@ -398,13 +433,15 @@
 
         let allResults = [];
         let totalRequests = 0;
-        let stopCollect = false;  // 标记是否因达到目标而停止收集
+        let stopCollect = false;
 
         try {
             for (const country of countries) {
-                if (stopCollect) break;
+                if (stopCollect || shouldStop) break;
                 for (const kw of keywords) {
-                    if (stopCollect) break;
+                    if (stopCollect || shouldStop) break;
+                    await waitIfPaused();
+                    if (stopCollect || shouldStop) break;
                     addLog(`🔎 正在搜索 ${country} - “${kw}” ...`);
                     totalRequests++;
                     const response = await fetch(proxyUrl, {
@@ -444,12 +481,22 @@
         } catch (err) {
             addLog(`❌ 错误: ${err.message}`, true);
             showError(`请求失败: ${err.message}`);
-            searchBtn.disabled = false;
-            searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            currentTask = null;
             return;
         }
 
-        // 无论是否提前停止，只要收集到结果就进行检测
+        if (shouldStop) {
+            addLog("任务已停止", true);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            currentTask = null;
+            return;
+        }
+
         addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
         addLog(`🔍 开始检测库存...`);
 
@@ -478,11 +525,38 @@
 
         addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，排除美元站: ${usdExcluded.length}`);
         resultArea.style.display = 'block';
-        searchBtn.disabled = false;
-        searchBtn.textContent = '🚀 开始寻宝 · 搜索并检测';
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = true;
+        currentTask = null;
     }
 
-    searchBtn.addEventListener('click', startSearch);
+    function pauseSearch() {
+        if (startBtn.disabled === false) return;
+        isPaused = true;
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = false;
+        addLog("⏸️ 已暂停，点击「继续」恢复...");
+    }
+
+    function resumeSearch() {
+        if (startBtn.disabled === false) return;
+        if (!isPaused) return;
+        isPaused = false;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        addLog("▶️ 继续运行...");
+        if (resumeResolver) {
+            resumeResolver();
+            resumeResolver = null;
+        }
+    }
+
+    startBtn.addEventListener('click', () => {
+        currentTask = startSearch();
+    });
+    pauseBtn.addEventListener('click', pauseSearch);
+    resumeBtn.addEventListener('click', resumeSearch);
 </script>
 </body>
 </html>
