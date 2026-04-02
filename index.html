@@ -438,7 +438,7 @@
 
         let allResults = [];
         let totalRequests = 0;
-        let stopLoop = false;  // 新增：用于提前退出循环
+        let stopLoop = false;  // 用于提前退出循环
 
         try {
             for (const country of countries) {
@@ -511,7 +511,8 @@
             return;
         }
 
-        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
+        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名`);
+        addLog(`🔍 开始检测库存...`);   // 新增：明确开始检测
 
         const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
         const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
@@ -536,7 +537,7 @@
             }
         }
 
-        addLog(`🎉 完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，排除美元站: ${usdExcluded.length}`);
+        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，排除美元站: ${usdExcluded.length}`);
         resultArea.style.display = 'block';
         startBtn.disabled = false;
         pauseBtn.disabled = true;
