@@ -137,7 +137,7 @@
         <div class="form-group">
             <label>🎯 目标独立站数量</label>
             <input type="number" id="target" value="20" min="1" max="500" step="10">
-            <div class="subnote">默认20，空值会自动设为20</div>
+            <div class="subnote">默认20，若留空或无效会自动设为20</div>
         </div>
 
         <div class="form-group">
@@ -275,11 +275,19 @@
         return [...new Map(kwList.map(k => [k, k])).values()];
     }
 
-    function getTarget() {
-        let val = parseInt(targetInput.value);
+    // 获取有效目标数量，无效时提示并返回默认值20
+    function getValidTarget() {
+        let raw = targetInput.value.trim();
+        if (raw === "") {
+            alert("目标独立站数量为空，已自动设置为 20。");
+            targetInput.value = "20";
+            return 20;
+        }
+        let val = parseInt(raw);
         if (isNaN(val) || val < 1) {
-            val = 20;
-            targetInput.value = 20;
+            alert("目标独立站数量无效，已自动设置为 20。");
+            targetInput.value = "20";
+            return 20;
         }
         return val;
     }
@@ -331,6 +339,9 @@
             return;
         }
 
+        // 检查并获取有效目标数量
+        const target = getValidTarget();
+
         if (currentTask) {
             shouldStop = true;
             if (resumeResolver) resumeResolver();
@@ -344,7 +355,6 @@
         if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
         const keywords = buildKeywords();
         if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
-        const target = getTarget();
         const proxyUrl = proxyUrlInput.value.trim();
         if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
 
