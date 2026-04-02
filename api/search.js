@@ -1,4 +1,5 @@
-// api/search.js
+// api/search.js (完整版，已包含新缺货关键词)
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -9,7 +10,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
-  // ================== 黑名单（域名关键词） ==================
+  // ================== 黑名单 ==================
   const EXCLUDE_DOMAINS = [
     "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
     "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -17,11 +18,10 @@ export default async function handler(req, res) {
     "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-    "jellyjournal.com", "lilietmilou.com", "ubuy",
-    "lodenfrey.com"   // 新增
+    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com"
   ];
 
-  // ================== 多语言缺货关键词 ==================
+  // ================== 缺货关键词（已添加新词） ==================
   const SOLD_OUT_KEYWORDS = [
     "sold out", "out of stock", "no stock", "not available", "currently unavailable",
     "ausverkauft", "nicht vorrätig", "nicht auf lager", "momentan nicht verfügbar",
@@ -37,7 +37,8 @@ export default async function handler(req, res) {
     "sem stock", "temporariamente indisponível", "produto esgotado",
     "agotado", "sin stock", "no disponible", "fuera de stock",
     "temporalmente no disponible", "artículo agotado", "no hay stock",
-    "esaurito"   // 意大利语“售罄”
+    "esaurito",
+    "this product is no longer in stock"   // 新增
   ];
 
   const IN_STOCK_KEYWORDS = [
@@ -51,7 +52,6 @@ export default async function handler(req, res) {
   ];
 
   try {
-    // 1. 调用 Serper API 获取搜索结果
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
@@ -60,7 +60,6 @@ export default async function handler(req, res) {
     const data = await serperRes.json();
     const rawUrls = (data.organic || []).map(item => item.link).filter(Boolean);
 
-    // 2. 域名去重 + 黑名单过滤
     const domainMap = new Map();
     for (const url of rawUrls) {
       if (EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain))) continue;
@@ -70,12 +69,9 @@ export default async function handler(req, res) {
       } catch {}
     }
     const uniqueUrls = Array.from(domainMap.values());
-
-    // 限制最多验证 20 个 URL（避免超时）
     const MAX_VERIFY = 20;
     const urlsToCheck = uniqueUrls.slice(0, MAX_VERIFY);
 
-    // 3. 并发验证每个页面（限制并发数）
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
@@ -98,7 +94,6 @@ export default async function handler(req, res) {
         }
         return { url, status: 'unknown' };
       } catch (err) {
-        console.error(`验证失败 ${url}:`, err.message);
         return { url, status: 'unknown' };
       }
     };
@@ -113,7 +108,6 @@ export default async function handler(req, res) {
 
     res.status(200).json({ results });
   } catch (err) {
-    console.error('Handler error:', err);
     res.status(500).json({ error: err.message });
   }
 }
