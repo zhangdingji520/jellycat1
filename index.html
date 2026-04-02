@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>🐰 Jellycat 小窝 · 智能搜索（可暂停）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%);
+            font-family: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', sans-serif;
+            padding: 2rem 1rem;
+            min-height: 100vh;
+        }
+
+        .card {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(2px);
+            border-radius: 2rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08), 0 6px 12px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #fce7d7;
+            padding: 2rem 2rem 1.5rem 2rem;
+            border-bottom: 2px solid #ffd6b5;
+            text-align: center;
+        }
+        .header h1 {
+            font-size: 2rem;
+            color: #6b3e1c;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .header p {
+            color: #a06e3c;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        label {
+            font-weight: 600;
+            color: #5a3e2b;
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            letter-spacing: 0.3px;
+        }
+        input, select {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe1c4;
+            background: #fffef9;
+            font-size: 0.95rem;
+            transition: all 0.2s;
+            outline: none;
+            font-family: inherit;
+        }
+        input:focus, select:focus {
+            border-color: #f7b787;
+            box-shadow: 0 0 0 3px rgba(247, 183, 135, 0.2);
+        }
+
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem 1rem;
+            background: #fffaf5;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe7d4;
+        }
+        .checkbox-group label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-weight: normal;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 0.3rem 0.8rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b4c34;
+            border: 1px solid #ffdeca;
+            white-space: nowrap;
+        }
+        .checkbox-group label:hover {
+            background: #ffefe3;
+            border-color: #f7b787;
+        }
+        .checkbox-group input {
+            width: auto;
+            margin: 0;
+            accent-color: #e9a26c;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn {
+            background: #e9a26c;
+            color: white;
+            border: none;
+            padding: 0.9rem 1.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            flex: 1;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+        }
+        .btn:hover {
+            background: #dc8b4f;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        }
+        .btn:disabled {
+            background: #d9c2ae;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .stats {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin: 2rem 0 1.5rem;
+        }
+        .stat-item {
+            background: #fef5ea;
+            border-radius: 2rem;
+            padding: 0.6rem 1.2rem;
+            text-align: center;
+            flex: 1;
+            min-width: 90px;
+            border: 1px solid #ffeedd;
+        }
+        .stat-number {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: #7b5a3e;
+            line-height: 1.2;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: #9e7a58;
+        }
+
+        .url-list {
+            background: #fffcf8;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe8da;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .url-item {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid #ffedd9;
+            word-break: break-all;
+        }
+        .url-item a {
+            color: #b2722e;
+            text-decoration: none;
+            font-size: 0.85rem;
+        }
+        .url-item a:hover {
+            color: #7b4a1e;
+            text-decoration: underline;
+        }
+
+        .log-area {
+            margin-top: 1.5rem;
+            background: #fffaf5;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe8da;
+            padding: 1rem;
+        }
+        .log-title {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #7b5a3e;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .log-content {
+            background: #fef7f0;
+            border-radius: 1rem;
+            padding: 0.75rem;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.8rem;
+            font-family: monospace;
+            color: #5a3e2b;
+            line-height: 1.4;
+        }
+        .log-line {
+            border-bottom: 1px solid #ffedd9;
+            padding: 0.2rem 0;
+            white-space: pre-wrap;
+        }
+
+        .error-message {
+            background: #ffe8e6;
+            color: #bc5a3c;
+            border-radius: 1.5rem;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+            text-align: center;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #cbab8b;
+            border-top: 1px solid #ffedd9;
+            padding: 1.5rem;
+            background: #fffbf7;
+        }
+
+        .subnote {
+            font-size: 0.7rem;
+            color: #b7916e;
+            margin-top: 0.4rem;
+        }
+
+        @media (max-width: 700px) {
+            .checkbox-group {
+                grid-template-columns: repeat(3, 1fr);
+            }
+            .content {
+                padding: 1.2rem;
+            }
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+        @media (max-width: 480px) {
+            .checkbox-group {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>🐣 Jellycat 小窝 · 智能寻宝</h1>
+        <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
+    </div>
+
+    <div class="content">
+        <div class="form-group">
+            <label>🔑 Serper API 密钥</label>
+            <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f2" value="">
+            <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank" style="color:#e9a26c;">serper.dev</a>，每月 2500 次搜索</div>
+        </div>
+
+        <div class="form-group">
+            <label>🌍 选择国家（可多选）</label>
+            <div class="checkbox-group" id="countryCheckboxes">
+                <label><input type="checkbox" value="DE" checked> 🇩🇪 德国</label>
+                <label><input type="checkbox" value="FR" checked> 🇫🇷 法国</label>
+                <label><input type="checkbox" value="ES" checked> 🇪🇸 西班牙</label>
+                <label><input type="checkbox" value="IT" checked> 🇮🇹 意大利</label>
+                <label><input type="checkbox" value="NL" checked> 🇳🇱 荷兰</label>
+                <label><input type="checkbox" value="BE" checked> 🇧🇪 比利时</label>
+                <label><input type="checkbox" value="PL" checked> 🇵🇱 波兰</label>
+                <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
+                <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
+                <label><input type="checkbox" value="CH"> 🇨🇭 瑞士</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>🔍 搜索关键词（英文逗号分隔）</label>
+            <input type="text" id="keywords" value="jellycat nesting bunnies, nesting bunnies jellycat, jellycat nesting bunnies set, jellycat nesting rabbits, jellycat stacking bunnies">
+        </div>
+
+        <div class="form-group">
+            <label>🎯 目标独立站数量</label>
+            <input type="number" id="target" value="100" min="10" max="500" step="10">
+        </div>
+
+        <div class="form-group">
+            <label>🖥️ 后端代理地址（Vercel 函数）</label>
+            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
+            <div class="subnote">📡 如果你有自己的后端，请替换为你的地址</div>
+        </div>
+
+        <div class="button-group">
+            <button id="startBtn" class="btn">🚀 开始寻宝</button>
+            <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
+            <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
+        </div>
+        <div id="errorMsg" class="error-message" style="display:none;"></div>
+
+        <div id="logArea" class="log-area" style="display:none;">
+            <div class="log-title">📋 寻宝日志</div>
+            <div id="logContent" class="log-content"></div>
+        </div>
+
+        <div id="resultArea" style="display:none;">
+            <div class="stats">
+                <div class="stat-item"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
+                <div class="stat-item"><div class="stat-number" id="buyableCount">0</div><div class="stat-label">✅ 可购买</div></div>
+                <div class="stat-item"><div class="stat-number" id="soldOutCount">0</div><div class="stat-label">🚫 售罄/缺货</div></div>
+                <div class="stat-item"><div class="stat-number" id="unknownCount">0</div><div class="stat-label">❓ 无法判断</div></div>
+                <div class="stat-item"><div class="stat-number" id="usdCount">0</div><div class="stat-label">💵 已排除美元站</div></div>
+            </div>
+            <h3 style="margin: 1rem 0 0.5rem; font-size:1.1rem;">✨ 可购买宝贝（点开即达）</h3>
+            <div id="buyableList" class="url-list">
+                <div style="text-align:center; color:#bda48a; padding:2rem;">✨ 点击搜索后，这里会出现可购买链接 ✨</div>
+            </div>
+        </div>
+    </div>
+    <div class="footer">
+        🐇 数据来源 Serper.dev | 独立站库存实时检测 | 自动过滤美元标价站点
+    </div>
+</div>
+
+<script>
+    // DOM 元素
+    const apiKeyInput = document.getElementById('apiKey');
+    const proxyUrlInput = document.getElementById('proxyUrl');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const errorDiv = document.getElementById('errorMsg');
+    const resultArea = document.getElementById('resultArea');
+    const logArea = document.getElementById('logArea');
+    const logContent = document.getElementById('logContent');
+    const totalSpan = document.getElementById('totalCount');
+    const buyableSpan = document.getElementById('buyableCount');
+    const soldOutSpan = document.getElementById('soldOutCount');
+    const unknownSpan = document.getElementById('unknownCount');
+    const usdSpan = document.getElementById('usdCount');
+    const buyableListDiv = document.getElementById('buyableList');
+
+    // 任务控制变量
+    let currentTask = null;       // 保存当前运行的异步任务（用于取消）
+    let shouldStop = false;       // 是否完全停止（开始新任务时重置）
+    let isPaused = false;         // 是否暂停
+    let resumeResolver = null;    // 继续时的 resolve 函数
+
+    function addLog(msg, isError = false) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.style.color = isError ? '#bc5a3c' : '#5a3e2b';
+        line.textContent = `🕒 ${new Date().toLocaleTimeString()}  ${msg}`;
+        logContent.appendChild(line);
+        line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function clearLog() {
+        logContent.innerHTML = '';
+    }
+
+    function getSelectedCountries() {
+        const checkboxes = document.querySelectorAll('#countryCheckboxes input:checked');
+        return Array.from(checkboxes).map(cb => cb.value);
+    }
+
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
+
+    // 等待暂停恢复的工具函数
+    async function waitIfPaused() {
+        while (isPaused && !shouldStop) {
+            await new Promise(resolve => {
+                resumeResolver = resolve;
+            });
+        }
+    }
+
+    async function startSearch() {
+        // 重置状态
+        if (currentTask) {
+            shouldStop = true;
+            if (resumeResolver) resumeResolver();
+            await currentTask; // 等待旧任务结束
+        }
+        shouldStop = false;
+        isPaused = false;
+        if (resumeResolver) resumeResolver = null;
+
+        // 获取参数
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) { showError('🐣 请先填写 Serper API 密钥～'); return; }
+        const countries = getSelectedCountries();
+        if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
+        const keywordsRaw = document.getElementById('keywords').value;
+        const keywords = keywordsRaw.split(',').map(k => k.trim()).filter(k => k);
+        if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词'); return; }
+        const target = parseInt(document.getElementById('target').value) || 100;
+        const proxyUrl = proxyUrlInput.value.trim();
+        if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
+
+        // 按钮状态
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        errorDiv.style.display = 'none';
+        resultArea.style.display = 'none';
+        logArea.style.display = 'block';
+        clearLog();
+        addLog('✨ 开始寻宝之旅 ✨');
+
+        let allResults = [];
+        let totalRequests = 0;
+
+        try {
+            for (const country of countries) {
+                if (shouldStop) break;
+                for (const kw of keywords) {
+                    if (shouldStop) break;
+                    await waitIfPaused();
+                    if (shouldStop) break;
+
+                    addLog(`🔎 正在搜索 ${country} - “${kw}” ...`);
+                    totalRequests++;
+                    const response = await fetch(proxyUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query: kw, country, apiKey })
+                    });
+                    if (!response.ok) {
+                        const errText = await response.text();
+                        throw new Error(`后端返回 ${response.status}: ${errText.slice(0, 100)}`);
+                    }
+                    const data = await response.json();
+                    if (data.results && Array.isArray(data.results)) {
+                        addLog(`📦 收到 ${data.results.length} 个原始结果（含重复）`);
+                        const domainMap = new Map();
+                        for (const item of data.results) {
+                            try {
+                                const host = new URL(item.url).hostname.replace(/^www\./, '');
+                                if (!domainMap.has(host)) domainMap.set(host, item);
+                            } catch(e) {}
+                        }
+                        const newItems = Array.from(domainMap.values());
+                        allResults.push(...newItems);
+                        if (allResults.length > target) allResults = allResults.slice(0, target);
+                        addLog(`✨ 去重后新增 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                    } else {
+                        addLog(`⚠️ 未获得有效结果`, true);
+                    }
+                    await new Promise(r => setTimeout(r, 200));
+                }
+            }
+        } catch (err) {
+            addLog(`❌ 错误: ${err.message}`, true);
+            showError(`请求失败: ${err.message}`);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            currentTask = null;
+            return;
+        }
+
+        if (shouldStop) {
+            addLog("任务已停止", true);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            currentTask = null;
+            return;
+        }
+
+        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，开始整理结果`);
+
+        const buyable = allResults.filter(r => r.status === 'buyable').map(r => r.url);
+        const soldOut = allResults.filter(r => r.status === 'sold_out').map(r => r.url);
+        const unknown = allResults.filter(r => r.status === 'unknown').map(r => r.url);
+        const usdExcluded = allResults.filter(r => r.status === 'usd_excluded').map(r => r.url);
+
+        totalSpan.textContent = allResults.length;
+        buyableSpan.textContent = buyable.length;
+        soldOutSpan.textContent = soldOut.length;
+        unknownSpan.textContent = unknown.length;
+        usdSpan.textContent = usdExcluded.length;
+
+        buyableListDiv.innerHTML = '';
+        if (buyable.length === 0) {
+            buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
+        } else {
+            for (const url of buyable) {
+                const div = document.createElement('div');
+                div.className = 'url-item';
+                div.innerHTML = `<a href="${url}" target="_blank" rel="noopener">${url}</a>`;
+                buyableListDiv.appendChild(div);
+            }
+        }
+
+        addLog(`🎉 完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，排除美元站: ${usdExcluded.length}`);
+        resultArea.style.display = 'block';
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = true;
+        currentTask = null;
+    }
+
+    // 暂停逻辑
+    function pauseSearch() {
+        if (!startBtn.disabled) return; // 未运行
+        isPaused = true;
+        pauseBtn.disabled = true;
+        resumeBtn.disabled = false;
+        addLog("⏸️ 已暂停，点击「继续」恢复...");
+    }
+
+    // 继续逻辑
+    function resumeSearch() {
+        if (!startBtn.disabled) return;
+        if (!isPaused) return;
+        isPaused = false;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        addLog("▶️ 继续运行...");
+        if (resumeResolver) {
+            resumeResolver();
+            resumeResolver = null;
+        }
+    }
+
+    // 绑定事件
+    startBtn.addEventListener('click', () => {
+        currentTask = startSearch();
+    });
+    pauseBtn.addEventListener('click', pauseSearch);
+    resumeBtn.addEventListener('click', resumeSearch);
+</script>
+</body>
+</html>
