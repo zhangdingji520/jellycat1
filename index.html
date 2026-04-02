@@ -486,12 +486,8 @@
         isPaused = true;
         pauseBtn.disabled = true;
         resumeBtn.disabled = false;
-        // 暂停时，如果已有收集结果，则启用检测按钮
-        if (collectedResults && collectedResults.length > 0) {
-            detectBtn.disabled = false;
-        } else {
-            detectBtn.disabled = true;
-        }
+        // 暂停时，启用检测按钮（无论是否有结果，点击时内部会判断）
+        detectBtn.disabled = false;
         addLog("⏸️ 已暂停，点击「继续」恢复...");
     }
 
