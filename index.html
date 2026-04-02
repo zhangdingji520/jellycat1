@@ -438,14 +438,22 @@
 
         let allResults = [];
         let totalRequests = 0;
+        let stopLoop = false;  // 新增：用于提前退出循环
 
         try {
             for (const country of countries) {
-                if (shouldStop) break;
+                if (stopLoop) break;
                 for (const kw of keywords) {
-                    if (shouldStop) break;
+                    if (stopLoop) break;
                     await waitIfPaused();
-                    if (shouldStop) break;
+                    if (stopLoop) break;
+
+                    // 每次循环开始前检查是否已达到目标
+                    if (allResults.length >= target) {
+                        addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
+                        stopLoop = true;
+                        break;
+                    }
 
                     addLog(`🔎 正在搜索 ${country} - “${kw}” ...`);
                     totalRequests++;
@@ -472,6 +480,12 @@
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
                         addLog(`✨ 去重后新增 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                        // 处理完后再次检查是否达到目标
+                        if (allResults.length >= target) {
+                            addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
+                            stopLoop = true;
+                            break;
+                        }
                     } else {
                         addLog(`⚠️ 未获得有效结果`, true);
                     }
@@ -488,7 +502,7 @@
             return;
         }
 
-        if (shouldStop) {
+        if (shouldStop || stopLoop) {
             addLog("任务已停止", true);
             startBtn.disabled = false;
             pauseBtn.disabled = true;
