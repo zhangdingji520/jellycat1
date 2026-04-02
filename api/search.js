@@ -1,5 +1,4 @@
-// api/search.js (完整版，已包含新缺货关键词)
-
+// api/search.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -21,7 +20,7 @@ export default async function handler(req, res) {
     "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com"
   ];
 
-  // ================== 缺货关键词（已添加新词） ==================
+  // ================== 缺货关键词（已添加新短语） ==================
   const SOLD_OUT_KEYWORDS = [
     "sold out", "out of stock", "no stock", "not available", "currently unavailable",
     "ausverkauft", "nicht vorrätig", "nicht auf lager", "momentan nicht verfügbar",
@@ -38,7 +37,8 @@ export default async function handler(req, res) {
     "agotado", "sin stock", "no disponible", "fuera de stock",
     "temporalmente no disponible", "artículo agotado", "no hay stock",
     "esaurito",
-    "this product is no longer in stock"   // 新增
+    "this product is no longer in stock",
+    "dieser artikel steht derzeit nicht zur verfügung"   // 新增
   ];
 
   const IN_STOCK_KEYWORDS = [
