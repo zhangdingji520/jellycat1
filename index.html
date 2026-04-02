@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat 小窝 · 智能搜索（排除美元站）</title>
+    <title>🐰 Jellycat小窝 · 智能搜索</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -38,7 +38,7 @@
 <div class="card">
     <div class="header">
         <h1>🐣 Jellycat 小窝 · 智能寻宝</h1>
-        <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
+        <p>搜索欧洲绝版系列，全球独立站库存检测，自动剔除美元站 🍃</p>
     </div>
     <div class="content">
         <div class="form-group">
@@ -241,7 +241,7 @@
                         if (allResults.length > target) allResults = allResults.slice(0, target);
                         addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                         if (allResults.length >= target) {
-                            addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
+                            addLog(`👍🏻 已达到目标数量 ${target}，停止搜索`);
                             stopCollect = true;
                             break;
                         }
