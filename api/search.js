@@ -76,14 +76,20 @@ export default async function handler(req, res) {
         if (!domainMap.has(host)) domainMap.set(host, url);
       } catch {}
     }
-    // 限制最多验证 8 个页面，避免超时
     const MAX_VERIFY = 8;
     const uniqueUrls = Array.from(domainMap.values()).slice(0, MAX_VERIFY);
 
+    // 增强的相关性检测：对于不含 "jellycat" 的搜索词（如纯 SKU/UPC），要求页面必须同时包含 "jellycat"
     const isRelevant = (html, searchQuery) => {
       const text = html.toLowerCase();
       const words = searchQuery.toLowerCase().split(/\s+/);
-      return words.some(word => word.length >= 2 && text.includes(word));
+      const containsAnyWord = words.some(word => word.length >= 2 && text.includes(word));
+      if (!containsAnyWord) return false;
+      // 如果搜索词本身不包含 "jellycat"，则要求页面必须包含 "jellycat"
+      if (!searchQuery.toLowerCase().includes('jellycat')) {
+        return text.includes('jellycat');
+      }
+      return true;
     };
 
     const verifyPage = async (url) => {
