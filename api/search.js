@@ -3,12 +3,11 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { query, country, apiKey, customSoldOutKeywords = [] } = req.body;
+  const { query, country, apiKey, customSoldOutKeywords = [], start = 0, num = 20 } = req.body;
   if (!query || !country || !apiKey) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
-  // ================== 内置缺货关键词 ==================
   const BUILTIN_SOLD_OUT_KEYWORDS = [
     "sold out", "out of stock", "no stock", "not available", "currently unavailable",
     "ausverkauft", "nicht vorrätig", "nicht auf lager", "momentan nicht verfügbar",
@@ -54,14 +53,14 @@ export default async function handler(req, res) {
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
     "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
-    "wikipedia.org"
+    "wikipedia.org", "bunnyuksale.com"
   ];
 
   try {
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q: query, gl: country, num: 20 }),
+      body: JSON.stringify({ q: query, gl: country, num, start }),
     });
     if (!serperRes.ok) {
       console.error(`Serper API error: ${serperRes.status}`);
@@ -80,11 +79,9 @@ export default async function handler(req, res) {
     }
     const uniqueUrls = Array.from(domainMap.values()).slice(0, 20);
 
-    // 相关性检测函数
     const isRelevant = (html, searchQuery) => {
       const text = html.toLowerCase();
       const words = searchQuery.toLowerCase().split(/\s+/);
-      // 只要页面包含搜索词中的任意一个完整单词（至少2个字符）就算相关
       return words.some(word => word.length >= 2 && text.includes(word));
     };
 
@@ -100,15 +97,9 @@ export default async function handler(req, res) {
         if (!pageRes.ok) return { url, status: 'unknown' };
         const html = await pageRes.text();
         
-        // 1. 相关性检测
-        if (!isRelevant(html, query)) {
-          return { url, status: 'irrelevant' };
-        }
-        
+        if (!isRelevant(html, query)) return { url, status: 'irrelevant' };
         const text = html.toLowerCase();
-        // 2. 缺货检测
         if (allSoldOutKeywords.some(kw => text.includes(kw))) return { url, status: 'sold_out' };
-        // 3. 有货检测
         if (IN_STOCK_KEYWORDS.some(kw => text.includes(kw))) {
           const hasDollar = text.includes('$') || text.includes('usd');
           const hasEuro = text.includes('€') || text.includes('eur');
