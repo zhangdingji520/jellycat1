@@ -3,9 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat寻宝</title>
+    <title>🐰 Jellycat寻宝 · 智能过滤</title>
     <style>
-        /* 样式与之前完全相同，此处省略以节省篇幅，实际使用时请保留完整样式 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
         .card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.95); border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
@@ -179,6 +178,7 @@
                 <div class="stat-item"><div class="stat-number" id="soldOutCount">0</div><div class="stat-label">🚫 售罄/缺货</div></div>
                 <div class="stat-item"><div class="stat-number" id="unknownCount">0</div><div class="stat-label">❓ 无法判断</div></div>
                 <div class="stat-item"><div class="stat-number" id="usdCount">0</div><div class="stat-label">💵 已排除美元站</div></div>
+                <div class="stat-item"><div class="stat-number" id="irrelevantCount">0</div><div class="stat-label">📄 不相关</div></div>
             </div>
             <div class="title-row">
                 <h3 style="margin:0;">✨ 可购买宝贝（点开即达）</h3>
@@ -191,6 +191,12 @@
 </div>
 
 <script>
+    // ================== 新增：URL 产品页过滤函数 ==================
+    function isLikelyProductUrl(url) {
+        const productPattern = /\/product\/|\/products\/|\/p\/|\/item\/|\/dp\/|\/sku\/|\/pid\/|\/detail\/|\/buy\/|\/itm\/|\/catalog\/product\/|\.html$/i;
+        return productPattern.test(url);
+    }
+
     // 黑名单（已添加 wikipedia.org）
     const EXCLUDE_DOMAINS = [
         "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
@@ -200,7 +206,7 @@
         "hood.de", "kleinanzeigen",
         "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
         "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
-        "wikipedia.org"   // 新增
+        "wikipedia.org"
     ];
     function isExcludedUrl(url) { return EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain)); }
 
@@ -220,6 +226,7 @@
     const soldOutSpan = document.getElementById('soldOutCount');
     const unknownSpan = document.getElementById('unknownCount');
     const usdSpan = document.getElementById('usdCount');
+    const irrelevantSpan = document.getElementById('irrelevantCount');
     const buyableListDiv = document.getElementById('buyableList');
     const saveUrlsBtn = document.getElementById('saveUrlsBtn');
     const skuInput = document.getElementById('skuInput');
@@ -283,9 +290,9 @@
         const mainKw = document.getElementById('keywords').value;
         if (mainKw.trim()) kwList.push(...mainKw.split(',').map(k => k.trim()).filter(k => k));
         const sku = skuInput.value.trim();
-        if (sku) kwList.push(...sku.split(',').map(k => k.trim()).filter(k => k));
+        if (sku) kwList.push(sku);
         const upc = upcInput.value.trim();
-        if (upc) kwList.push(...upc.split(',').map(k => k.trim()).filter(k => k));
+        if (upc) kwList.push(upc);
         return [...new Map(kwList.map(k => [k, k])).values()];
     }
 
@@ -317,6 +324,7 @@
         const buyable = uniqueResults.filter(r => r.status === 'buyable').map(r => r.url);
         const soldOut = uniqueResults.filter(r => r.status === 'sold_out').map(r => r.url);
         const unknown = uniqueResults.filter(r => r.status === 'unknown').map(r => r.url);
+        const irrelevant = uniqueResults.filter(r => r.status === 'irrelevant').map(r => r.url);
         currentBuyableUrls = buyable;
 
         totalSpan.textContent = uniqueResults.length;
@@ -324,6 +332,7 @@
         soldOutSpan.textContent = soldOut.length;
         unknownSpan.textContent = unknown.length;
         usdSpan.textContent = usdExcluded;
+        irrelevantSpan.textContent = irrelevant.length;
 
         buyableListDiv.innerHTML = '';
         if (buyable.length === 0) {
@@ -348,7 +357,7 @@
             saveUrlsBtn.disabled = false;
         }
         resultArea.style.display = 'block';
-        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，累计排除美元站: ${usdExcluded}`);
+        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，不相关: ${irrelevant.length}，累计排除美元站: ${usdExcluded}`);
     }
 
     async function startSearch() {
@@ -415,10 +424,16 @@
                     if (data.results && Array.isArray(data.results)) {
                         let filteredBlacklist = 0;
                         let usdThisBatch = 0;
+                        let filteredNotProduct = 0;
                         const domainMap = new Map();
                         for (const item of data.results) {
                             if (isExcludedUrl(item.url)) {
                                 filteredBlacklist++;
+                                continue;
+                            }
+                            // ★ 关键改进：只保留看起来像产品页的 URL
+                            if (!isLikelyProductUrl(item.url)) {
+                                filteredNotProduct++;
                                 continue;
                             }
                             if (item.status === 'usd_excluded') {
@@ -435,7 +450,7 @@
                         allResults.push(...newItems);
                         if (allResults.length > target) allResults = allResults.slice(0, target);
                         collectedResults = [...allResults];
-                        addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                        addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，过滤非产品页 ${filteredNotProduct} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
                         if (allResults.length >= target) {
                             addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
                             stopCollect = true;
