@@ -1,154 +1,556 @@
-async function startSearch() {
-    const apiKey = apiKeyInput.value.trim();
-    if (!apiKey) {
-        alert('🐣 请先填写 Serper API 密钥！');
-        showError('🐣 请先填写 Serper API 密钥～');
-        return;
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>🐰 Jellycat寻宝</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
+        .card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.95); border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
+        .header { background: #fce7d7; padding: 2rem; text-align: center; border-bottom: 2px solid #ffd6b5; }
+        .header h1 { font-size: 2rem; color: #6b3e1c; }
+        .content { padding: 2rem; }
+        .form-group { margin-bottom: 1.5rem; }
+        label { font-weight: 600; color: #5a3e2b; display: block; margin-bottom: 0.5rem; }
+        input, select { width: 100%; padding: 0.85rem 1rem; border-radius: 1.5rem; border: 1px solid #ffe1c4; background: #fffef9; }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem 1rem;
+            background: #fffaf5;
+            padding: 1rem 1.2rem;
+            border-radius: 1.5rem;
+            border: 1px solid #ffe7d4;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            font-weight: normal;
+            cursor: pointer;
+            background: #ffffff;
+            padding: 0.3rem 0.5rem;
+            border-radius: 2rem;
+            transition: all 0.2s;
+            margin: 0;
+            font-size: 0.9rem;
+            color: #6b4c34;
+            border: 1px solid #ffdeca;
+            white-space: normal;
+            word-break: keep-all;
+            text-align: center;
+            min-width: 0;
+            flex: 1;
+        }
+        .checkbox-group label:hover { background: #ffefe3; border-color: #f7b787; }
+        .checkbox-group input { width: auto; margin: 0; accent-color: #e9a26c; flex-shrink: 0; }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+            justify-content: center;
+        }
+        .btn {
+            background: #e9a26c;
+            color: white;
+            border: none;
+            padding: 0.7rem 0.5rem;
+            border-radius: 2rem;
+            font-weight: bold;
+            font-size: 0.95rem;
+            cursor: pointer;
+            flex: 1;
+            min-width: 80px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            line-height: 1.2;
+            white-space: nowrap;
+        }
+        .btn:hover { background: #dc8b4f; transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+        .btn:disabled { background: #d9c2ae; cursor: not-allowed; transform: none; }
+        @media (max-width: 550px) {
+            .btn { white-space: normal; font-size: 0.85rem; padding: 0.6rem 0.3rem; min-width: 70px; }
+            .button-group { gap: 0.5rem; }
+        }
+        .stats { display: flex; flex-wrap: wrap; gap: 1rem; margin: 2rem 0 1.5rem; }
+        .stat-item { background: #fef5ea; border-radius: 2rem; padding: 0.6rem 1.2rem; text-align: center; flex: 1; min-width: 90px; border: 1px solid #ffeedd; }
+        .stat-number { font-size: 1.6rem; font-weight: bold; color: #7b5a3e; }
+        .url-list { background: #fffcf8; border-radius: 1.5rem; border: 1px solid #ffe8da; max-height: 400px; overflow-y: auto; padding: 0.5rem; }
+        .url-item { padding: 0.7rem 1rem; border-bottom: 1px solid #ffedd9; word-break: break-all; display: flex; align-items: baseline; gap: 0.5rem; }
+        .url-item .index { font-weight: bold; color: #e9a26c; min-width: 2rem; }
+        .url-item a { color: #b2722e; text-decoration: none; word-break: break-all; }
+        .log-area { margin-top: 1.5rem; background: #fffaf5; border-radius: 1.5rem; border: 1px solid #ffe8da; padding: 1rem; }
+        .log-content { background: #fef7f0; border-radius: 1rem; padding: 0.75rem; max-height: 200px; overflow-y: auto; font-size: 0.8rem; font-family: monospace; }
+        .log-line { border-bottom: 1px solid #ffedd9; padding: 0.2rem 0; white-space: pre-wrap; }
+        .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
+        .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
+        .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
+        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .save-btn:hover { background: #8bb891; }
+        .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .subnote { font-size: 0.7rem; color: #b7916e; margin-top: 0.4rem; }
+        @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
+        @media (max-width: 480px) { .checkbox-group { grid-template-columns: repeat(2,1fr); } }
+    </style>
+</head>
+<body>
+<div class="card">
+    <div class="header">
+        <h1>🐣 Jellycat小窝 · 智能寻宝</h1>
+        <p>搜索绝版系列，全球独立站库存检测，自动剔除美元站，闲鱼:zhangdingj 🍃</p>
+    </div>
+    <div class="content">
+        <div class="form-group">
+            <label>🔑 Serper API 密钥</label>
+            <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f1" value="">
+            <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank">serper.dev</a>，每月 2500 次搜索</div>
+        </div>
+
+        <div class="form-group">
+            <label>🌍 选择国家（可多选）</label>
+            <div class="checkbox-group" id="countryCheckboxes">
+                <label><input type="checkbox" value="DE" checked> 🇩🇪 德国</label>
+                <label><input type="checkbox" value="ES" checked> 🇪🇸 西班牙</label>
+                <label><input type="checkbox" value="FR" checked> 🇫🇷 法国</label>
+                <label><input type="checkbox" value="IT" checked> 🇮🇹 意大利</label>
+                <label><input type="checkbox" value="NL" checked> 🇳🇱 荷兰</label>
+                <label><input type="checkbox" value="BE" checked> 🇧🇪 比利时</label>
+                <label><input type="checkbox" value="PL" checked> 🇵🇱 波兰</label>
+                <label><input type="checkbox" value="PT" checked> 🇵🇹 葡萄牙</label>
+                <label><input type="checkbox" value="GB"> 🇬🇧 英国</label>
+                <label><input type="checkbox" value="AT"> 🇦🇹 奥地利</label>
+                <label><input type="checkbox" value="CH"> 🇨🇭 瑞士</label>
+                <label><input type="checkbox" value="LU"> 🇱🇺 卢森堡</label>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>🔍 搜索关键词（英文逗号分隔）</label>
+            <input type="text" id="keywords" value="jellycat nesting bunnies,jellycat stacking bunnies">
+        </div>
+
+        <div class="form-group">
+            <label>🏷️ SKU 码（单选）</label>
+            <input type="text" id="skuInput" placeholder="例如: WEE6PN">
+        </div>
+
+        <div class="form-group">
+            <label>📦 UPC 码（单选）</label>
+            <input type="text" id="upcInput" placeholder="例如: 670983148565">
+        </div>
+
+        <div class="form-group">
+            <label>🎯 目标独立站数量</label>
+            <input type="number" id="target" value="20" min="1" max="500" step="10">
+            <div class="subnote">默认20，若留空或无效会自动设为20</div>
+        </div>
+
+        <div class="form-group">
+            <label>🖥️ 后端代理地址</label>
+            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
+            <div class="subnote">📡 请使用你自己的后端地址</div>
+        </div>
+
+        <div class="button-group">
+            <button id="startBtn" class="btn">🚀 开始寻宝</button>
+            <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
+            <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
+            <button id="detectBtn" class="btn" disabled>🔍 检测库存</button>
+        </div>
+        <div id="errorMsg" class="error-message" style="display:none;"></div>
+
+        <div id="logArea" class="log-area" style="display:none;">
+            <div class="log-title">📋 寻宝日志</div>
+            <div id="logContent" class="log-content"></div>
+        </div>
+
+        <div id="resultArea" style="display:none;">
+            <div class="stats">
+                <div class="stat-item"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
+                <div class="stat-item"><div class="stat-number" id="buyableCount">0</div><div class="stat-label">✅ 可购买</div></div>
+                <div class="stat-item"><div class="stat-number" id="soldOutCount">0</div><div class="stat-label">🚫 售罄/缺货</div></div>
+                <div class="stat-item"><div class="stat-number" id="unknownCount">0</div><div class="stat-label">❓ 无法判断</div></div>
+                <div class="stat-item"><div class="stat-number" id="usdCount">0</div><div class="stat-label">💵 已排除美元站</div></div>
+                <div class="stat-item"><div class="stat-number" id="irrelevantCount">0</div><div class="stat-label">📄 不相关</div></div>
+            </div>
+            <div class="title-row">
+                <h3 style="margin:0;">✨ 可购买宝贝（点开即达）</h3>
+                <button id="saveUrlsBtn" class="save-btn" disabled>💾 保存链接 (.txt)</button>
+            </div>
+            <div id="buyableList" class="url-list"><div style="text-align:center; color:#bda48a; padding:2rem;">✨ 点击搜索后，这里会出现可购买链接 ✨</div></div>
+        </div>
+    </div>
+    <div class="footer">🐇 数据来源 Serper.dev | 独立站库存实时检测 | 自动过滤美元标价站点</div>
+</div>
+
+<script>
+    // ================== URL 产品页过滤函数 ==================
+    function isLikelyProductUrl(url) {
+        const productPattern = /\/product\/|\/products\/|\/p\/|\/item\/|\/dp\/|\/sku\/|\/pid\/|\/detail\/|\/buy\/|\/itm\/|\/catalog\/product\/|\.html$/i;
+        return productPattern.test(url);
     }
 
-    const target = getValidTarget();
+    // 黑名单
+    const EXCLUDE_DOMAINS = [
+        "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
+        "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
+        "bol.com", "aliexpress", "cdiscount", "fnac", "darty", "otto",
+        "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
+        "hood.de", "kleinanzeigen",
+        "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
+        "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
+        "wikipedia.org", "bunnyuksale.com"
+    ];
+    function isExcludedUrl(url) { return EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain)); }
 
-    if (currentTask) {
-        shouldStop = true;
-        if (resumeResolver) resumeResolver();
-        await currentTask;
+    // DOM 元素
+    const apiKeyInput = document.getElementById('apiKey');
+    const proxyUrlInput = document.getElementById('proxyUrl');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resumeBtn = document.getElementById('resumeBtn');
+    const detectBtn = document.getElementById('detectBtn');
+    const errorDiv = document.getElementById('errorMsg');
+    const resultArea = document.getElementById('resultArea');
+    const logArea = document.getElementById('logArea');
+    const logContent = document.getElementById('logContent');
+    const totalSpan = document.getElementById('totalCount');
+    const buyableSpan = document.getElementById('buyableCount');
+    const soldOutSpan = document.getElementById('soldOutCount');
+    const unknownSpan = document.getElementById('unknownCount');
+    const usdSpan = document.getElementById('usdCount');
+    const irrelevantSpan = document.getElementById('irrelevantCount');
+    const buyableListDiv = document.getElementById('buyableList');
+    const saveUrlsBtn = document.getElementById('saveUrlsBtn');
+    const skuInput = document.getElementById('skuInput');
+    const upcInput = document.getElementById('upcInput');
+    const targetInput = document.getElementById('target');
+
+    let currentTask = null;
+    let shouldStop = false;
+    let isPaused = false;
+    let resumeResolver = null;
+    let collectedResults = [];
+    let currentUsdExcluded = 0;
+    let currentBuyableUrls = [];
+
+    function addLog(msg, isError = false) {
+        const line = document.createElement('div');
+        line.className = 'log-line';
+        line.style.color = isError ? '#bc5a3c' : '#5a3e2b';
+        line.textContent = `🕒 ${new Date().toLocaleTimeString()}  ${msg}`;
+        logContent.appendChild(line);
+        line.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
-    shouldStop = false;
-    isPaused = false;
-    if (resumeResolver) resumeResolver = null;
 
-    const countries = getSelectedCountries();
-    if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
-    const keywords = buildKeywords();
-    if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
-    const proxyUrl = proxyUrlInput.value.trim();
-    if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
+    function clearLog() { logContent.innerHTML = ''; }
 
-    startBtn.disabled = true;
-    pauseBtn.disabled = false;
-    resumeBtn.disabled = true;
-    detectBtn.disabled = true;
-    saveUrlsBtn.disabled = true;
-    errorDiv.style.display = 'none';
-    resultArea.style.display = 'none';
-    logArea.style.display = 'block';
-    clearLog();
-    addLog(`✨ 开始寻宝之旅，目标 ${target} 个独立站 ✨`);
+    function getSelectedCountries() {
+        return Array.from(document.querySelectorAll('#countryCheckboxes input:checked')).map(cb => cb.value);
+    }
 
-    let allResults = [];
-    let totalRequests = 0;
-    let stopCollect = false;
-    currentUsdExcluded = 0;
+    function showError(msg) {
+        errorDiv.textContent = msg;
+        errorDiv.style.display = 'block';
+        setTimeout(() => errorDiv.style.display = 'none', 5000);
+    }
 
-    // 翻页配置：减少到 2 页
-    const PAGES = 2;
-    const RESULTS_PER_PAGE = 20;
+    async function waitIfPaused() {
+        while (isPaused && !shouldStop) {
+            await new Promise(resolve => { resumeResolver = resolve; });
+        }
+    }
 
-    try {
-        for (const country of countries) {
-            if (stopCollect || shouldStop) break;
-            for (const kw of keywords) {
-                if (stopCollect || shouldStop) break;
-                for (let page = 0; page < PAGES; page++) {
-                    if (stopCollect || shouldStop) break;
-                    await waitIfPaused();
-                    if (stopCollect || shouldStop) break;
-                    const start = page * RESULTS_PER_PAGE;
-                    addLog(`🔎 正在搜索 ${country} - “${kw}” (第${page+1}页, start=${start}) ...`);
-                    totalRequests++;
-                    try {
-                        const response = await fetch(proxyUrl, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ query: kw, country, apiKey, start, num: RESULTS_PER_PAGE })
-                        });
-                        if (!response.ok) {
-                            const errText = await response.text();
-                            addLog(`⚠️ 请求失败 (${response.status})，跳过此页`, true);
-                            continue;
-                        }
-                        const data = await response.json();
-                        if (data.results && Array.isArray(data.results)) {
-                            let filteredBlacklist = 0;
-                            let usdThisBatch = 0;
-                            let filteredNotProduct = 0;
-                            const domainMap = new Map();
-                            for (const item of data.results) {
-                                if (isExcludedUrl(item.url)) {
-                                    filteredBlacklist++;
-                                    continue;
-                                }
-                                if (!isLikelyProductUrl(item.url)) {
-                                    filteredNotProduct++;
-                                    continue;
-                                }
-                                if (item.status === 'usd_excluded') {
-                                    usdThisBatch++;
-                                    currentUsdExcluded++;
-                                    continue;
-                                }
-                                try {
-                                    const host = new URL(item.url).hostname.replace(/^www\./, '');
-                                    if (!domainMap.has(host)) domainMap.set(host, { url: item.url, status: item.status });
-                                } catch(e) {}
-                            }
-                            const newItems = Array.from(domainMap.values());
-                            allResults.push(...newItems);
-                            if (allResults.length > target) allResults = allResults.slice(0, target);
-                            collectedResults = [...allResults];
-                            addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，过滤非产品页 ${filteredNotProduct} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
-                            if (allResults.length >= target) {
-                                addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
-                                stopCollect = true;
-                                break;
-                            }
-                        } else {
-                            addLog(`⚠️ 未获得有效结果`, true);
-                        }
-                    } catch (err) {
-                        addLog(`❌ 请求异常: ${err.message}，跳过此页`, true);
-                        continue;
-                    }
-                    await new Promise(r => setTimeout(r, 200));
-                }
+    function saveUrlsToFile() {
+        if (currentBuyableUrls.length === 0) {
+            alert('没有可购买的链接，请先搜索。');
+            return;
+        }
+        const content = currentBuyableUrls.join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'jellycat_buyable_links.txt';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+
+    function buildKeywords() {
+        let kwList = [];
+        const mainKw = document.getElementById('keywords').value;
+        if (mainKw.trim()) kwList.push(...mainKw.split(',').map(k => k.trim()).filter(k => k));
+        const sku = skuInput.value.trim();
+        if (sku) kwList.push(sku);
+        const upc = upcInput.value.trim();
+        if (upc) kwList.push(upc);
+        return [...new Map(kwList.map(k => [k, k])).values()];
+    }
+
+    function getValidTarget() {
+        let raw = targetInput.value.trim();
+        if (raw === "") {
+            alert("目标独立站数量为空，已自动设置为 20。");
+            targetInput.value = "20";
+            return 20;
+        }
+        let val = parseInt(raw);
+        if (isNaN(val) || val < 1) {
+            alert("目标独立站数量无效，已自动设置为 20。");
+            targetInput.value = "20";
+            return 20;
+        }
+        return val;
+    }
+
+    function displayResults(results, usdExcluded) {
+        const uniqueMap = new Map();
+        for (const r of results) {
+            if (!uniqueMap.has(r.url)) {
+                uniqueMap.set(r.url, r.status);
             }
         }
-    } catch (err) {
-        addLog(`❌ 致命错误: ${err.message}`, true);
-        showError(`请求失败: ${err.message}`);
+        const uniqueResults = Array.from(uniqueMap.entries()).map(([url, status]) => ({ url, status }));
+        
+        const buyable = uniqueResults.filter(r => r.status === 'buyable').map(r => r.url);
+        const soldOut = uniqueResults.filter(r => r.status === 'sold_out').map(r => r.url);
+        const unknown = uniqueResults.filter(r => r.status === 'unknown').map(r => r.url);
+        const irrelevant = uniqueResults.filter(r => r.status === 'irrelevant').map(r => r.url);
+        currentBuyableUrls = buyable;
+
+        totalSpan.textContent = uniqueResults.length;
+        buyableSpan.textContent = buyable.length;
+        soldOutSpan.textContent = soldOut.length;
+        unknownSpan.textContent = unknown.length;
+        usdSpan.textContent = usdExcluded;
+        irrelevantSpan.textContent = irrelevant.length;
+
+        buyableListDiv.innerHTML = '';
+        if (buyable.length === 0) {
+            buyableListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">🍃 暂时没找到可购买的宝贝，试试更换关键词或国家～</div>';
+            saveUrlsBtn.disabled = true;
+        } else {
+            buyable.forEach((url, idx) => {
+                const div = document.createElement('div');
+                div.className = 'url-item';
+                const indexSpan = document.createElement('span');
+                indexSpan.className = 'index';
+                indexSpan.textContent = `${idx+1}.`;
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = url;
+                div.appendChild(indexSpan);
+                div.appendChild(link);
+                buyableListDiv.appendChild(div);
+            });
+            saveUrlsBtn.disabled = false;
+        }
+        resultArea.style.display = 'block';
+        addLog(`✅ 检测完成！可购买: ${buyable.length}，售罄: ${soldOut.length}，无法判断: ${unknown.length}，不相关: ${irrelevant.length}，累计排除美元站: ${usdExcluded}`);
+    }
+
+    async function startSearch() {
+        const apiKey = apiKeyInput.value.trim();
+        if (!apiKey) {
+            alert('🐣 请先填写 Serper API 密钥！');
+            showError('🐣 请先填写 Serper API 密钥～');
+            return;
+        }
+
+        const target = getValidTarget();
+
+        if (currentTask) {
+            shouldStop = true;
+            if (resumeResolver) resumeResolver();
+            await currentTask;
+        }
+        shouldStop = false;
+        isPaused = false;
+        if (resumeResolver) resumeResolver = null;
+
+        const countries = getSelectedCountries();
+        if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
+        const keywords = buildKeywords();
+        if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
+        const proxyUrl = proxyUrlInput.value.trim();
+        if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
+
+        startBtn.disabled = true;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        detectBtn.disabled = true;
+        saveUrlsBtn.disabled = true;
+        errorDiv.style.display = 'none';
+        resultArea.style.display = 'none';
+        logArea.style.display = 'block';
+        clearLog();
+        addLog(`✨ 开始寻宝之旅，目标 ${target} 个独立站 ✨`);
+
+        let allResults = [];
+        let totalRequests = 0;
+        let stopCollect = false;
+        currentUsdExcluded = 0;
+
+        const PAGES = 2;
+        const RESULTS_PER_PAGE = 20;
+
+        try {
+            for (const country of countries) {
+                if (stopCollect || shouldStop) break;
+                for (const kw of keywords) {
+                    if (stopCollect || shouldStop) break;
+                    for (let page = 0; page < PAGES; page++) {
+                        if (stopCollect || shouldStop) break;
+                        await waitIfPaused();
+                        if (stopCollect || shouldStop) break;
+                        const start = page * RESULTS_PER_PAGE;
+                        addLog(`🔎 正在搜索 ${country} - “${kw}” (第${page+1}页, start=${start}) ...`);
+                        totalRequests++;
+                        try {
+                            const response = await fetch(proxyUrl, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ query: kw, country, apiKey, start, num: RESULTS_PER_PAGE })
+                            });
+                            if (!response.ok) {
+                                const errText = await response.text();
+                                addLog(`⚠️ 请求失败 (${response.status})，跳过此页`, true);
+                                continue;
+                            }
+                            const data = await response.json();
+                            if (data.results && Array.isArray(data.results)) {
+                                let filteredBlacklist = 0;
+                                let usdThisBatch = 0;
+                                let filteredNotProduct = 0;
+                                const domainMap = new Map();
+                                for (const item of data.results) {
+                                    if (isExcludedUrl(item.url)) {
+                                        filteredBlacklist++;
+                                        continue;
+                                    }
+                                    if (!isLikelyProductUrl(item.url)) {
+                                        filteredNotProduct++;
+                                        continue;
+                                    }
+                                    if (item.status === 'usd_excluded') {
+                                        usdThisBatch++;
+                                        currentUsdExcluded++;
+                                        continue;
+                                    }
+                                    try {
+                                        const host = new URL(item.url).hostname.replace(/^www\./, '');
+                                        if (!domainMap.has(host)) domainMap.set(host, { url: item.url, status: item.status });
+                                    } catch(e) {}
+                                }
+                                const newItems = Array.from(domainMap.values());
+                                allResults.push(...newItems);
+                                if (allResults.length > target) allResults = allResults.slice(0, target);
+                                collectedResults = [...allResults];
+                                addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，过滤非产品页 ${filteredNotProduct} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                                if (allResults.length >= target) {
+                                    addLog(`🎯 已达到目标数量 ${target}，停止搜索`);
+                                    stopCollect = true;
+                                    break;
+                                }
+                            } else {
+                                addLog(`⚠️ 未获得有效结果`, true);
+                            }
+                        } catch (err) {
+                            addLog(`❌ 请求异常: ${err.message}，跳过此页`, true);
+                            continue;
+                        }
+                        await new Promise(r => setTimeout(r, 200));
+                    }
+                }
+            }
+        } catch (err) {
+            addLog(`❌ 致命错误: ${err.message}`, true);
+            showError(`请求失败: ${err.message}`);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            detectBtn.disabled = false;
+            saveUrlsBtn.disabled = true;
+            currentTask = null;
+            return;
+        }
+
+        collectedResults = allResults;
+
+        if (shouldStop) {
+            addLog("任务已停止", true);
+            startBtn.disabled = false;
+            pauseBtn.disabled = true;
+            resumeBtn.disabled = true;
+            detectBtn.disabled = false;
+            saveUrlsBtn.disabled = true;
+            currentTask = null;
+            return;
+        }
+
+        if (allResults.length < target) {
+            addLog(`🏁 搜索结束，仅收集到 ${allResults.length} 个独立域名（未达到目标 ${target}）。`);
+            addLog(`💡 提示：请增加更多搜索关键词、SKU 或 UPC 码，或勾选更多国家，然后重新开始搜索。`);
+        } else {
+            addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，已达到目标 ${target}。`);
+        }
+        addLog(`请点击「检测库存」查看结果。`);
+        
+        detectBtn.disabled = false;
         startBtn.disabled = false;
         pauseBtn.disabled = true;
         resumeBtn.disabled = true;
-        detectBtn.disabled = false;
-        saveUrlsBtn.disabled = true;
         currentTask = null;
-        return;
     }
 
-    collectedResults = allResults;
+    function detectCollected() {
+        if (!collectedResults || collectedResults.length === 0) {
+            addLog("没有已收集的网址，请先开始搜索并暂停/停止。", true);
+            return;
+        }
+        addLog(`🔍 开始检测已收集的 ${collectedResults.length} 个网址...`);
+        displayResults(collectedResults, currentUsdExcluded);
+    }
 
-    if (shouldStop) {
-        addLog("任务已停止", true);
-        startBtn.disabled = false;
+    function pauseSearch() {
+        if (startBtn.disabled === false) return;
+        isPaused = true;
         pauseBtn.disabled = true;
-        resumeBtn.disabled = true;
+        resumeBtn.disabled = false;
         detectBtn.disabled = false;
-        saveUrlsBtn.disabled = true;
-        currentTask = null;
-        return;
+        addLog("⏸️ 已暂停，点击「继续」恢复...");
     }
 
-    if (allResults.length < target) {
-        addLog(`🏁 搜索结束，仅收集到 ${allResults.length} 个独立域名（未达到目标 ${target}）。`);
-        addLog(`💡 提示：请增加更多搜索关键词、SKU 或 UPC 码，或勾选更多国家，然后重新开始搜索。`);
-    } else {
-        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，已达到目标 ${target}。`);
+    function resumeSearch() {
+        if (startBtn.disabled === false) return;
+        if (!isPaused) return;
+        isPaused = false;
+        pauseBtn.disabled = false;
+        resumeBtn.disabled = true;
+        detectBtn.disabled = true;
+        addLog("▶️ 继续运行...");
+        if (resumeResolver) {
+            resumeResolver();
+            resumeResolver = null;
+        }
     }
-    addLog(`请点击「检测库存」查看结果。`);
-    
-    detectBtn.disabled = false;
-    startBtn.disabled = false;
-    pauseBtn.disabled = true;
-    resumeBtn.disabled = true;
-    currentTask = null;
-}
+
+    startBtn.addEventListener('click', () => { currentTask = startSearch(); });
+    pauseBtn.addEventListener('click', pauseSearch);
+    resumeBtn.addEventListener('click', resumeSearch);
+    detectBtn.addEventListener('click', detectCollected);
+    saveUrlsBtn.addEventListener('click', saveUrlsToFile);
+</script>
+</body>
+</html>
