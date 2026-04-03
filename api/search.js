@@ -63,7 +63,6 @@ export default async function handler(req, res) {
       body: JSON.stringify({ q: query, gl: country, num, start }),
     });
     if (!serperRes.ok) {
-      console.error(`Serper API error: ${serperRes.status}`);
       return res.status(200).json({ results: [] });
     }
     const data = await serperRes.json();
@@ -77,7 +76,9 @@ export default async function handler(req, res) {
         if (!domainMap.has(host)) domainMap.set(host, url);
       } catch {}
     }
-    const uniqueUrls = Array.from(domainMap.values()).slice(0, 20);
+    // 限制最多验证 8 个页面，避免超时
+    const MAX_VERIFY = 8;
+    const uniqueUrls = Array.from(domainMap.values()).slice(0, MAX_VERIFY);
 
     const isRelevant = (html, searchQuery) => {
       const text = html.toLowerCase();
@@ -88,15 +89,14 @@ export default async function handler(req, res) {
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 6000);
+        const timeout = setTimeout(() => controller.abort(), 4000);
         const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
+          headers: { 'User-Agent': 'Mozilla/5.0' },
           signal: controller.signal,
         });
         clearTimeout(timeout);
         if (!pageRes.ok) return { url, status: 'unknown' };
         const html = await pageRes.text();
-        
         if (!isRelevant(html, query)) return { url, status: 'irrelevant' };
         const text = html.toLowerCase();
         if (allSoldOutKeywords.some(kw => text.includes(kw))) return { url, status: 'sold_out' };
