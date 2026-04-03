@@ -1,4 +1,3 @@
-// api/search.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -29,10 +28,9 @@ export default async function handler(req, res) {
     "this product is no longer in stock",
     "dieser artikel steht derzeit nicht zur verfügung",
     "para ver el precio y comprar este producto debes registrarte como profesional",
-    "oczekiwanie na dostawę"   // 新增：波兰语“等待交货”
+    "oczekiwanie na dostawę"
   ];
 
-  // 合并内置关键词和自定义关键词
   const allSoldOutKeywords = [
     ...BUILTIN_SOLD_OUT_KEYWORDS,
     ...(customSoldOutKeywords || []).map(k => k.toLowerCase())
@@ -48,7 +46,6 @@ export default async function handler(req, res) {
     "en stock", "disponible", "en existencias"
   ];
 
-  // 黑名单
   const EXCLUDE_DOMAINS = [
     "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
     "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -56,7 +53,8 @@ export default async function handler(req, res) {
     "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com", "wikipedia.org"
+    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
+    "wikipedia.org"
   ];
 
   try {
@@ -70,9 +68,7 @@ export default async function handler(req, res) {
       return res.status(200).json({ results: [] });
     }
     const data = await serperRes.json();
-    const rawUrls = (data.organic && Array.isArray(data.organic))
-      ? data.organic.map(item => item.link).filter(Boolean)
-      : [];
+    const rawUrls = (data.organic && Array.isArray(data.organic)) ? data.organic.map(item => item.link).filter(Boolean) : [];
 
     const domainMap = new Map();
     for (const url of rawUrls) {
@@ -82,9 +78,15 @@ export default async function handler(req, res) {
         if (!domainMap.has(host)) domainMap.set(host, url);
       } catch {}
     }
-    const uniqueUrls = Array.from(domainMap.values());
-    const MAX_VERIFY = 20;
-    const urlsToCheck = uniqueUrls.slice(0, MAX_VERIFY);
+    const uniqueUrls = Array.from(domainMap.values()).slice(0, 20);
+
+    // 相关性检测函数
+    const isRelevant = (html, searchQuery) => {
+      const text = html.toLowerCase();
+      const words = searchQuery.toLowerCase().split(/\s+/);
+      // 只要页面包含搜索词中的任意一个完整单词（至少2个字符）就算相关
+      return words.some(word => word.length >= 2 && text.includes(word));
+    };
 
     const verifyPage = async (url) => {
       try {
@@ -97,9 +99,16 @@ export default async function handler(req, res) {
         clearTimeout(timeout);
         if (!pageRes.ok) return { url, status: 'unknown' };
         const html = await pageRes.text();
+        
+        // 1. 相关性检测
+        if (!isRelevant(html, query)) {
+          return { url, status: 'irrelevant' };
+        }
+        
         const text = html.toLowerCase();
-
+        // 2. 缺货检测
         if (allSoldOutKeywords.some(kw => text.includes(kw))) return { url, status: 'sold_out' };
+        // 3. 有货检测
         if (IN_STOCK_KEYWORDS.some(kw => text.includes(kw))) {
           const hasDollar = text.includes('$') || text.includes('usd');
           const hasEuro = text.includes('€') || text.includes('eur');
@@ -112,14 +121,12 @@ export default async function handler(req, res) {
       }
     };
 
-    const CONCURRENCY = 5;
     const results = [];
-    for (let i = 0; i < urlsToCheck.length; i += CONCURRENCY) {
-      const batch = urlsToCheck.slice(i, i + CONCURRENCY);
+    for (let i = 0; i < uniqueUrls.length; i += 5) {
+      const batch = uniqueUrls.slice(i, i + 5);
       const batchResults = await Promise.all(batch.map(verifyPage));
       results.push(...batchResults);
     }
-
     res.status(200).json({ results });
   } catch (err) {
     console.error(err);
