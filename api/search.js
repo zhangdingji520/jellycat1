@@ -1,3 +1,4 @@
+// api/search.js
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -8,6 +9,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
+  // ================== 内置缺货关键词 ==================
   const BUILTIN_SOLD_OUT_KEYWORDS = [
     "sold out", "out of stock", "no stock", "not available", "currently unavailable",
     "ausverkauft", "nicht vorrätig", "nicht auf lager", "momentan nicht verfügbar",
@@ -27,7 +29,8 @@ export default async function handler(req, res) {
     "this product is no longer in stock",
     "dieser artikel steht derzeit nicht zur verfügung",
     "para ver el precio y comprar este producto debes registrarte como profesional",
-    "oczekiwanie na dostawę"
+    "oczekiwanie na dostawę",
+    "in-store pick up only"   // 新增：仅限店内自提
   ];
 
   const allSoldOutKeywords = [
@@ -45,6 +48,7 @@ export default async function handler(req, res) {
     "en stock", "disponible", "en existencias"
   ];
 
+  // 黑名单（域名关键词）
   const EXCLUDE_DOMAINS = [
     "jellycat.com", "eu.jellycat.com", "de.jellycat.com", "fr.jellycat.com",
     "amazon", "ebay", "walmart", "target", "toysrus", "wish", "etsy", "zalando",
@@ -53,21 +57,24 @@ export default async function handler(req, res) {
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
     "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
-    "wikipedia.org", "bunnyuksale.com","indigo.ca"
+    "wikipedia.org", "bunnyuksale.com"
   ];
 
   try {
+    // 调用 Serper API
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
       body: JSON.stringify({ q: query, gl: country, num, start }),
     });
     if (!serperRes.ok) {
+      console.error(`Serper API error: ${serperRes.status}`);
       return res.status(200).json({ results: [] });
     }
     const data = await serperRes.json();
     const rawUrls = (data.organic && Array.isArray(data.organic)) ? data.organic.map(item => item.link).filter(Boolean) : [];
 
+    // 域名去重 + 黑名单过滤
     const domainMap = new Map();
     for (const url of rawUrls) {
       if (EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain))) continue;
@@ -76,28 +83,29 @@ export default async function handler(req, res) {
         if (!domainMap.has(host)) domainMap.set(host, url);
       } catch {}
     }
+    // 限制最多验证 8 个页面，避免超时
     const MAX_VERIFY = 8;
     const uniqueUrls = Array.from(domainMap.values()).slice(0, MAX_VERIFY);
 
-    // 增强的相关性检测：对于不含 "jellycat" 的搜索词（如纯 SKU/UPC），要求页面必须同时包含 "jellycat"
+    // 增强相关性检测：对于不含 "jellycat" 的搜索词（如纯 SKU/UPC），要求页面必须同时包含 "jellycat"
     const isRelevant = (html, searchQuery) => {
       const text = html.toLowerCase();
       const words = searchQuery.toLowerCase().split(/\s+/);
       const containsAnyWord = words.some(word => word.length >= 2 && text.includes(word));
       if (!containsAnyWord) return false;
-      // 如果搜索词本身不包含 "jellycat"，则要求页面必须包含 "jellycat"
       if (!searchQuery.toLowerCase().includes('jellycat')) {
         return text.includes('jellycat');
       }
       return true;
     };
 
+    // 验证单个页面
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 4000);
         const pageRes = await fetch(url, {
-          headers: { 'User-Agent': 'Mozilla/5.0' },
+          headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
           signal: controller.signal,
         });
         clearTimeout(timeout);
@@ -118,6 +126,7 @@ export default async function handler(req, res) {
       }
     };
 
+    // 并发验证（每批5个）
     const results = [];
     for (let i = 0; i < uniqueUrls.length; i += 5) {
       const batch = uniqueUrls.slice(i, i + 5);
