@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
     "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com",
-    "wikipedia.org", "bunnyuksale.com"
+    "wikipedia.org", "bunnyuksale.com","indigo.ca"
   ];
 
   try {
