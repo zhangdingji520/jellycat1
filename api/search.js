@@ -56,7 +56,7 @@ export default async function handler(req, res) {
     "vinted", "depop", "allegro", "marktplaats", "olx", "wallapop", "leboncoin",
     "hood.de", "kleinanzeigen",
     "facebook", "instagram", "tiktok", "twitter", "pinterest", "youtube",
-    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com"
+    "jellyjournal.com", "lilietmilou.com", "ubuy", "lodenfrey.com", "wikipedia.org"
   ];
 
   try {
