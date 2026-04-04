@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat寻宝 · 智能搜索（内置翻译）</title>
+    <title>🐰 Jellycat寻宝 · 智能搜索</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -161,7 +161,7 @@
 
         <!-- 多语言关键词生成器（使用 MyMemory 免费 API） -->
         <div class="keyword-generator">
-            <label>🌐 多语言关键词生成器（MyMemory 免费翻译）</label>
+            <label>🌐 多语言关键词生成器（MyMemory免费翻译）</label>
             <div class="generator-row">
                 <input type="text" id="productNameInput" placeholder="例如: jellycat fluffy whale, jellycat Hase, jellycat puppy">
                 <button id="generateLangBtn">⚡ 生成已选国家的语言</button>
@@ -171,7 +171,7 @@
 
         <div class="form-group">
             <label>🔍 搜索关键词（英文逗号分隔）</label>
-            <input type="text" id="keywords" value="jellycat nesting bunnies,jellycat stacking bunnies">
+            <input type="text" id="keywords" placeholder="jellycat nesting bunnies,jellycat stacking bunnies">
         </div>
 
         <div class="form-group">
@@ -193,7 +193,7 @@
         <div class="form-group">
             <label>🖥️ 后端代理地址（Serper 搜索用）</label>
             <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
-            <div class="subnote">📡 请使用你自己的 Serper 后端地址</div>
+            <div class="subnote">📡 请使用本 Serper 后端地址</div>
         </div>
 
         <div class="button-group">
