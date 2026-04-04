@@ -30,7 +30,8 @@ export default async function handler(req, res) {
     "dieser artikel steht derzeit nicht zur verfügung",
     "para ver el precio y comprar este producto debes registrarte como profesional",
     "oczekiwanie na dostawę",
-    "in-store pick up only"   // 新增：仅限店内自提
+    "in-store pick up only",
+    "en réapprovisionnement"   // 法语：补货中
   ];
 
   const allSoldOutKeywords = [
@@ -61,7 +62,6 @@ export default async function handler(req, res) {
   ];
 
   try {
-    // 调用 Serper API
     const serperRes = await fetch('https://google.serper.dev/search', {
       method: 'POST',
       headers: { 'X-API-KEY': apiKey, 'Content-Type': 'application/json' },
@@ -74,7 +74,6 @@ export default async function handler(req, res) {
     const data = await serperRes.json();
     const rawUrls = (data.organic && Array.isArray(data.organic)) ? data.organic.map(item => item.link).filter(Boolean) : [];
 
-    // 域名去重 + 黑名单过滤
     const domainMap = new Map();
     for (const url of rawUrls) {
       if (EXCLUDE_DOMAINS.some(domain => url.toLowerCase().includes(domain))) continue;
@@ -83,11 +82,9 @@ export default async function handler(req, res) {
         if (!domainMap.has(host)) domainMap.set(host, url);
       } catch {}
     }
-    // 限制最多验证 8 个页面，避免超时
     const MAX_VERIFY = 8;
     const uniqueUrls = Array.from(domainMap.values()).slice(0, MAX_VERIFY);
 
-    // 增强相关性检测：对于不含 "jellycat" 的搜索词（如纯 SKU/UPC），要求页面必须同时包含 "jellycat"
     const isRelevant = (html, searchQuery) => {
       const text = html.toLowerCase();
       const words = searchQuery.toLowerCase().split(/\s+/);
@@ -99,7 +96,6 @@ export default async function handler(req, res) {
       return true;
     };
 
-    // 验证单个页面
     const verifyPage = async (url) => {
       try {
         const controller = new AbortController();
@@ -126,7 +122,6 @@ export default async function handler(req, res) {
       }
     };
 
-    // 并发验证（每批5个）
     const results = [];
     for (let i = 0; i < uniqueUrls.length; i += 5) {
       const batch = uniqueUrls.slice(i, i + 5);
