@@ -126,8 +126,27 @@
         .log-line { border-bottom: 1px solid #ffedd9; padding: 0.2rem 0; white-space: pre-wrap; }
         .error-message { background: #ffe8e6; color: #bc5a3c; border-radius: 1.5rem; padding: 0.75rem; margin: 1rem 0; text-align: center; }
         .footer { text-align: center; font-size: 0.7rem; color: #cbab8b; border-top: 1px solid #ffedd9; padding: 1.5rem; background: #fffbf7; }
-        .title-row { display: flex; align-items: center; justify-content: space-between; margin: 1rem 0 0.5rem; flex-wrap: wrap; gap: 0.5rem; }
-        .save-btn { background: #a0c4a8; color: #2c5e2e; border: none; padding: 0.4rem 1rem; border-radius: 2rem; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; }
+        .title-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1rem 0 0.5rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .save-btn {
+            background: #a0c4a8;
+            color: #2c5e2e;
+            border: none;
+            padding: 0.4rem 1rem;
+            border-radius: 2rem;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
         .save-btn:hover { background: #8bb891; }
         .save-btn:disabled { opacity: 0.5; cursor: not-allowed; }
         .subnote { font-size: 0.7rem; color: #b7916e; margin-top: 0.4rem; }
@@ -372,8 +391,8 @@
     function showError(msg) { errorDiv.textContent = msg; errorDiv.style.display = 'block'; setTimeout(() => errorDiv.style.display = 'none', 5000); }
     async function waitIfPaused() { while (isPaused && !shouldStop) { await new Promise(resolve => { resumeResolver = resolve; }); } }
 
+    // 保存当前显示的列表（从 detailListDiv 中提取）
     function saveUrlsToFile() {
-        // 保存当前显示的列表（detailListDiv 中的链接）
         const links = Array.from(detailListDiv.querySelectorAll('a')).map(a => a.href);
         if (links.length === 0) { alert('没有可保存的链接'); return; }
         const content = links.join('\n');
@@ -439,6 +458,7 @@
         detailListDiv.innerHTML = '';
         if (!urls || urls.length === 0) {
             detailListDiv.innerHTML = '<div style="text-align:center; color:#bda48a; padding:2rem;">暂无数据</div>';
+            saveUrlsBtn.disabled = true;
             return;
         }
         urls.forEach((url, idx) => {
@@ -456,6 +476,7 @@
             div.appendChild(link);
             detailListDiv.appendChild(div);
         });
+        saveUrlsBtn.disabled = false;
     }
 
     function getTitleForType(type) {
@@ -483,7 +504,10 @@
         stats.forEach(stat => {
             const el = document.querySelector(`.stat-item[data-type="${stat.type}"]`);
             if (el) {
-                el.addEventListener('click', () => {
+                // 移除旧监听，避免重复
+                const newEl = el.cloneNode(true);
+                el.parentNode.replaceChild(newEl, el);
+                newEl.addEventListener('click', () => {
                     renderDetailList(stat.type, stat.urls());
                 });
             }
@@ -570,11 +594,9 @@
     async function detectCollected() {
         if (!collectedResults || collectedResults.length === 0) { addLog("没有已收集的网址，请先开始搜索并暂停/停止。", true); return; }
         addLog(`🔍 开始检测已收集的 ${collectedResults.length} 个网址...`);
-        // 由于后端在搜索时已经返回了每个 URL 的 status，所以 collectedResults 已经包含了状态
-        // 直接显示结果
         displayStatsAndStoreUrls(collectedResults, currentUsdExcluded);
         resultArea.style.display = 'block';
-        bindStatsEvents(); // 重新绑定事件
+        bindStatsEvents(); // 重新绑定事件（因为 DOM 重新生成）
     }
 
     function pauseSearch() { if (startBtn.disabled === false) return; isPaused = true; pauseBtn.disabled = true; resumeBtn.disabled = false; detectBtn.disabled = false; addLog("⏸️ 已暂停，点击「继续」恢复..."); }
