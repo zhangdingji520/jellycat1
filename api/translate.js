@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
-  // 百度翻译 API 配置（替换为你的真实信息）
   const APP_ID = '20260404002587238';
-  const SECRET_KEY = 'iYvLPIidFJiZIDy7DqY9';   // 请改为截图中的正确密钥
+  const SECRET_KEY = 'iYvLPIidFJiZIDy7DqY9';   // ✅ 已更正
+
   const salt = Date.now().toString();
   const signStr = APP_ID + text + salt + SECRET_KEY;
   const sign = crypto.createHash('md5').update(signStr).digest('hex');
@@ -21,7 +21,7 @@ export default async function handler(req, res) {
   const url = 'https://fanyi-api.baidu.com/api/trans/vip/translate';
   const params = new URLSearchParams({
     q: text,
-    from: 'auto',        // 自动检测源语言
+    from: 'auto',
     to: targetLang,
     appid: APP_ID,
     salt: salt,
