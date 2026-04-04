@@ -11,12 +11,13 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing parameters' });
   }
 
+  // 使用您提供的最新密钥
   const APP_ID = '20260404002587238';
-  const SECRET_KEY = 'iYvLPIidFJiZIDy7DqY9';   // ✅ 已更正
+  const SECRET_KEY = 'VziMR7yaOpUZnmuoCSts';
 
   const salt = Date.now().toString();
   const signStr = APP_ID + text + salt + SECRET_KEY;
-  const sign = crypto.createHash('md5').update(signStr).digest('hex');
+  const sign = crypto.createHash('md5').update(signStr, 'utf8').digest('hex');
 
   const url = 'https://fanyi-api.baidu.com/api/trans/vip/translate';
   const params = new URLSearchParams({
