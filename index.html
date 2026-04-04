@@ -5,8 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>🐰 Jellycat寻宝 · 智能搜索</title>
     <style>
-        /* 样式与之前相同，此处省略以节省篇幅，实际使用请保留完整样式 */
-        /* 为了完整性，下面保留必要的样式，但为避免代码过长，建议您直接使用原有样式，只修改 script 中的 proxyUrl 处理逻辑 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
         .card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.95); border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
@@ -194,8 +192,8 @@
 
         <div class="form-group">
             <label>🖥️ 后端代理地址（Serper 搜索用）</label>
-            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://cors-anywhere.herokuapp.com/https://jellycat1-ylhr.vercel.app/api/search">
-            <div class="subnote">📡 已使用 CORS 代理，如仍有问题可手动改为原始地址</div>
+            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
+            <div class="subnote">📡 后端已支持跨域，直接使用原始地址</div>
         </div>
 
         <div class="button-group">
