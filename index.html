@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>🐰 Jellycat寻宝 · 智能搜索+百度翻译</title>
+    <title>🐰 Jellycat寻宝 · 智能搜索（内置翻译）</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
@@ -159,9 +159,9 @@
             </div>
         </div>
 
-        <!-- 多语言关键词生成器（使用百度翻译） -->
+        <!-- 多语言关键词生成器（使用 MyMemory 免费 API） -->
         <div class="keyword-generator">
-            <label>🌐 多语言关键词生成器（百度翻译）</label>
+            <label>🌐 多语言关键词生成器（MyMemory 免费翻译）</label>
             <div class="generator-row">
                 <input type="text" id="productNameInput" placeholder="例如: jellycat fluffy whale, jellycat Hase, jellycat puppy">
                 <button id="generateLangBtn">⚡ 生成已选国家的语言</button>
@@ -191,9 +191,9 @@
         </div>
 
         <div class="form-group">
-            <label>🖥️ 后端代理地址</label>
+            <label>🖥️ 后端代理地址（Serper 搜索用）</label>
             <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
-            <div class="subnote">📡 请使用你自己的后端地址</div>
+            <div class="subnote">📡 请使用你自己的 Serper 后端地址</div>
         </div>
 
         <div class="button-group">
@@ -201,8 +201,6 @@
             <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
             <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
             <button id="detectBtn" class="btn" disabled>🔍 检测库存</button>
-            <!-- 新增：测试 API 按钮 -->
-            <button id="testApiBtn" class="btn" style="background-color: #6c757d;">🔌 测试 API</button>
         </div>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
 
@@ -231,11 +229,8 @@
 </div>
 
 <script>
-    // ================== 翻译函数（通过后端代理调用百度翻译 API） ==================
-    // 请将下面的 PROXY_URL 修改为你的实际 Vercel 翻译接口地址
-    const PROXY_URL = 'https://jellycat1-ylhr.vercel.app/api/translate';
-    
-    // 语言代码映射（国家代码 → 百度翻译目标语言代码）
+    // ================== 翻译函数（使用 MyMemory 免费 API，无需后端） ==================
+    // 语言代码映射（国家代码 → MyMemory 目标语言代码）
     const langCodeMap = {
         "DE": "de", "ES": "es", "FR": "fr", "IT": "it", "NL": "nl",
         "BE": "fr",   // 比利时默认法语
@@ -243,18 +238,18 @@
     };
     
     async function translateText(text, targetLang) {
+        // 使用 MyMemory API（免费，支持跨域）
+        const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`;
         try {
-            const response = await fetch(PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: text, targetLang: targetLang })
-            });
-            if (!response.ok) {
-                const error = await response.json();
-                throw new Error(error.error || '翻译失败');
-            }
+            const response = await fetch(url);
             const data = await response.json();
-            return data.translated || text;
+            // 获取翻译结果
+            let translated = data.responseData.translatedText;
+            // 如果翻译结果与原文本相同（可能未找到），则返回原文本
+            if (translated && translated.toLowerCase() === text.toLowerCase()) {
+                return text;
+            }
+            return translated || text;
         } catch (error) {
             console.error(`翻译失败 (${targetLang}):`, error);
             return text;
@@ -332,7 +327,6 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const resumeBtn = document.getElementById('resumeBtn');
     const detectBtn = document.getElementById('detectBtn');
-    const testApiBtn = document.getElementById('testApiBtn');
     const errorDiv = document.getElementById('errorMsg');
     const resultArea = document.getElementById('resultArea');
     const logArea = document.getElementById('logArea');
@@ -665,28 +659,6 @@
             resumeResolver = null;
         }
     }
-    
-    // 测试 API 按钮事件
-    testApiBtn.addEventListener('click', async () => {
-        const proxyUrl = 'https://jellycat1-ylhr.vercel.app/api/translate';
-        const testText = 'jellycat Hase';
-        const targetLang = 'fr';
-        try {
-            const response = await fetch(proxyUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ text: testText, targetLang: targetLang })
-            });
-            const data = await response.json();
-            if (data.translated) {
-                alert(`✅ 翻译成功！\n输入: ${testText}\n输出: ${data.translated}`);
-            } else {
-                alert(`❌ 翻译失败: ${data.error || '未知错误'}`);
-            }
-        } catch (err) {
-            alert(`❌ 请求失败: ${err.message}`);
-        }
-    });
     
     startBtn.addEventListener('click', () => { currentTask = startSearch(); });
     pauseBtn.addEventListener('click', pauseSearch);
