@@ -12,9 +12,8 @@ export default async function handler(req, res) {
   }
 
   // 百度翻译 API 配置（替换为你的真实信息）
-  const APP_ID = '20260404002587238';          // 你的 App ID
-  const SECRET_KEY = 'iYvLP1idfJiZiDy7DqY9';  // 你的密钥
-
+  const APP_ID = '20260404002587238';
+  const SECRET_KEY = 'iYvLPIidFJiZIDy7DqY9';   // 请改为截图中的正确密钥
   const salt = Date.now().toString();
   const signStr = APP_ID + text + salt + SECRET_KEY;
   const sign = crypto.createHash('md5').update(signStr).digest('hex');
