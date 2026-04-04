@@ -163,10 +163,10 @@
         <div class="keyword-generator">
             <label>🌐 多语言关键词生成器（百度翻译）</label>
             <div class="generator-row">
-                <input type="text" id="productNameInput" placeholder="例如: jellycat fluffy whale, jellycat puppy, jellycat elephant">
+                <input type="text" id="productNameInput" placeholder="例如: jellycat fluffy whale, jellycat Hase, jellycat puppy">
                 <button id="generateLangBtn">⚡ 生成已选国家的语言</button>
             </div>
-            <div class="subnote">💡 支持多个短语（英文逗号分隔），自动翻译最后一个单词，生成多语言关键词并填入下方搜索框。</div>
+            <div class="subnote">💡 支持多个短语（英文逗号分隔），自动翻译整个短语，生成多语言关键词并填入下方搜索框。</div>
         </div>
 
         <div class="form-group">
@@ -201,6 +201,8 @@
             <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
             <button id="resumeBtn" class="btn" disabled>▶️ 继续</button>
             <button id="detectBtn" class="btn" disabled>🔍 检测库存</button>
+            <!-- 新增：测试 API 按钮 -->
+            <button id="testApiBtn" class="btn" style="background-color: #6c757d;">🔌 测试 API</button>
         </div>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
 
@@ -255,14 +257,15 @@
             return data.translated || text;
         } catch (error) {
             console.error(`翻译失败 (${targetLang}):`, error);
-            return text; // 失败时返回原词
+            return text;
         }
     }
     
+    // 生成多语言关键词（翻译整个短语）
     async function generateMultilingualKeywords() {
         const rawInput = document.getElementById('productNameInput').value.trim();
         if (!rawInput) {
-            alert('请先输入要生成的玩偶全名（例如 jellycat fluffy whale, jellycat puppy）');
+            alert('请先输入要生成的玩偶全名（例如 jellycat fluffy whale, jellycat Hase）');
             return;
         }
         const countries = getSelectedCountryCodes();
@@ -285,16 +288,11 @@
         const allTranslated = [];
         
         for (const phrase of phrases) {
-            const words = phrase.trim().split(/\s+/);
-            if (words.length === 0) continue;
-            const lastWord = words[words.length - 1];
-            const prefix = words.slice(0, -1).join(' ');
             for (const code of countries) {
                 const targetLang = langCodeMap[code];
                 if (!targetLang) continue;
-                const translatedWord = await translateText(lastWord, targetLang);
-                const newPhrase = prefix ? `${prefix} ${translatedWord}` : translatedWord;
-                allTranslated.push(newPhrase);
+                const translatedPhrase = await translateText(phrase, targetLang);
+                allTranslated.push(translatedPhrase);
             }
         }
         
@@ -334,6 +332,7 @@
     const pauseBtn = document.getElementById('pauseBtn');
     const resumeBtn = document.getElementById('resumeBtn');
     const detectBtn = document.getElementById('detectBtn');
+    const testApiBtn = document.getElementById('testApiBtn');
     const errorDiv = document.getElementById('errorMsg');
     const resultArea = document.getElementById('resultArea');
     const logArea = document.getElementById('logArea');
@@ -666,6 +665,28 @@
             resumeResolver = null;
         }
     }
+    
+    // 测试 API 按钮事件
+    testApiBtn.addEventListener('click', async () => {
+        const proxyUrl = 'https://jellycat1-ylhr.vercel.app/api/translate';
+        const testText = 'jellycat Hase';
+        const targetLang = 'fr';
+        try {
+            const response = await fetch(proxyUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: testText, targetLang: targetLang })
+            });
+            const data = await response.json();
+            if (data.translated) {
+                alert(`✅ 翻译成功！\n输入: ${testText}\n输出: ${data.translated}`);
+            } else {
+                alert(`❌ 翻译失败: ${data.error || '未知错误'}`);
+            }
+        } catch (err) {
+            alert(`❌ 请求失败: ${err.message}`);
+        }
+    });
     
     startBtn.addEventListener('click', () => { currentTask = startSearch(); });
     pauseBtn.addEventListener('click', pauseSearch);
