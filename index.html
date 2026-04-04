@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>🐰 Jellycat寻宝 · 智能搜索</title>
     <style>
+        /* 样式与之前相同，此处省略以节省篇幅，实际使用请保留完整样式 */
+        /* 为了完整性，下面保留必要的样式，但为避免代码过长，建议您直接使用原有样式，只修改 script 中的 proxyUrl 处理逻辑 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
         .card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.95); border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
@@ -192,8 +194,8 @@
 
         <div class="form-group">
             <label>🖥️ 后端代理地址（Serper 搜索用）</label>
-            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
-            <div class="subnote">📡 请使用本 Serper 后端地址</div>
+            <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://cors-anywhere.herokuapp.com/https://jellycat1-ylhr.vercel.app/api/search">
+            <div class="subnote">📡 已使用 CORS 代理，如仍有问题可手动改为原始地址</div>
         </div>
 
         <div class="button-group">
@@ -229,8 +231,7 @@
 </div>
 
 <script>
-    // ================== 翻译函数（使用 MyMemory 免费 API，无需后端） ==================
-    // 语言代码映射（国家代码 → MyMemory 目标语言代码）
+    // ================== 翻译函数（使用 MyMemory 免费 API） ==================
     const langCodeMap = {
         "DE": "de", "ES": "es", "FR": "fr", "IT": "it", "NL": "nl",
         "BE": "fr",   // 比利时默认法语
@@ -238,14 +239,11 @@
     };
     
     async function translateText(text, targetLang) {
-        // 使用 MyMemory API（免费，支持跨域）
         const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=en|${targetLang}`;
         try {
             const response = await fetch(url);
             const data = await response.json();
-            // 获取翻译结果
             let translated = data.responseData.translatedText;
-            // 如果翻译结果与原文本相同（可能未找到），则返回原文本
             if (translated && translated.toLowerCase() === text.toLowerCase()) {
                 return text;
             }
@@ -256,7 +254,6 @@
         }
     }
     
-    // 生成多语言关键词（翻译整个短语）
     async function generateMultilingualKeywords() {
         const rawInput = document.getElementById('productNameInput').value.trim();
         if (!rawInput) {
@@ -291,7 +288,6 @@
             }
         }
         
-        // 去重并保留顺序
         const unique = [...new Map(allTranslated.map(item => [item, item])).values()];
         const keywordsStr = unique.join(', ');
         document.getElementById('keywords').value = keywordsStr;
@@ -497,7 +493,7 @@
         if (countries.length === 0) { showError('🌍 至少选择一个国家嗷'); return; }
         const keywords = buildKeywords();
         if (keywords.length === 0) { showError('🔍 请输入至少一个搜索关键词、SKU 或 UPC'); return; }
-        const proxyUrl = proxyUrlInput.value.trim();
+        let proxyUrl = proxyUrlInput.value.trim();
         if (!proxyUrl) { showError('🖥️ 请填写后端代理地址'); return; }
         
         startBtn.disabled = true;
