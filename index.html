@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>🐰 Jellycat寻宝 · 智能搜索</title>
     <style>
+        /* 样式与之前相同，为了简洁此处省略，实际使用请保留完整样式 */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { background: linear-gradient(145deg, #f9f5f0 0%, #fff4e8 100%); font-family: system-ui; padding: 2rem 1rem; min-height: 100vh; }
         .card { max-width: 1200px; margin: 0 auto; background: rgba(255,255,255,0.95); border-radius: 2rem; box-shadow: 0 20px 40px rgba(0,0,0,0.08); overflow: hidden; }
@@ -96,10 +97,7 @@
             border: 1px solid #ffeedd;
             transition: all 0.2s;
         }
-        .stat-item:hover {
-            background: #ffe3cc;
-            transform: translateY(-2px);
-        }
+        .stat-item:hover { background: #ffe3cc; transform: translateY(-2px); }
         .stat-number { font-size: 1.6rem; font-weight: bold; color: #7b5a3e; }
         .stat-label { font-size: 0.75rem; color: #9e7a58; }
         .url-list {
@@ -166,12 +164,6 @@
         }
         .generator-row input { flex: 3; padding: 0.6rem 1rem; }
         .generator-row button { flex: 1; background: #e9a26c; color: white; border: none; padding: 0.6rem; border-radius: 2rem; font-weight: bold; cursor: pointer; }
-        .detail-header {
-            margin: 1rem 0 0.5rem;
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #7b5a3e;
-        }
         @media (max-width: 700px) { .checkbox-group { grid-template-columns: repeat(3,1fr); } }
         @media (max-width: 480px) { .checkbox-group { grid-template-columns: repeat(2,1fr); } }
     </style>
@@ -188,7 +180,6 @@
             <input type="password" id="apiKey" placeholder="例如: 17e141da4fb66b674c2a5b046afb598834bf28f1" value="">
             <div class="subnote">👉 免费申请 <a href="https://serper.dev" target="_blank">serper.dev</a>，每月 2500 次搜索</div>
         </div>
-
         <div class="form-group">
             <label>🌍 选择国家（可多选）</label>
             <div class="checkbox-group" id="countryCheckboxes">
@@ -206,7 +197,6 @@
                 <label><input type="checkbox" value="LU"> 🇱🇺 卢森堡</label>
             </div>
         </div>
-
         <div class="keyword-generator">
             <label>🌐 多语言关键词生成器（MyMemory免费翻译）</label>
             <div class="generator-row">
@@ -215,34 +205,28 @@
             </div>
             <div class="subnote">💡 支持多个短语（英文逗号分隔），自动翻译整个短语，生成多语言关键词并填入下方搜索框。</div>
         </div>
-
         <div class="form-group">
             <label>🔍 搜索关键词（英文逗号分隔）</label>
             <input type="text" id="keywords" placeholder="例如：jellycat nesting bunnies,jellycat stacking bunnies">
         </div>
-
         <div class="form-group">
             <label>🏷️ SKU 码（单选）</label>
             <input type="text" id="skuInput" placeholder="例如: WEE6PN">
         </div>
-
         <div class="form-group">
             <label>📦 UPC 码（单选）</label>
             <input type="text" id="upcInput" placeholder="例如: 670983148565">
         </div>
-
         <div class="form-group">
             <label>🎯 目标独立站数量</label>
             <input type="number" id="target" value="20" min="1" max="500" step="10">
             <div class="subnote">默认20，若留空或无效会自动设为20</div>
         </div>
-
         <div class="form-group">
             <label>🖥️ 后端代理地址（Serper 搜索用）</label>
             <input type="text" id="proxyUrl" placeholder="https://your-app.vercel.app/api/search" value="https://jellycat1-ylhr.vercel.app/api/search">
             <div class="subnote">📡 后端已支持跨域，直接使用原始地址</div>
         </div>
-
         <div class="button-group">
             <button id="startBtn" class="btn">🚀 开始寻宝</button>
             <button id="pauseBtn" class="btn" disabled>⏸️ 暂停</button>
@@ -250,12 +234,10 @@
             <button id="detectBtn" class="btn" disabled>🔍 检测库存</button>
         </div>
         <div id="errorMsg" class="error-message" style="display:none;"></div>
-
         <div id="logArea" class="log-area" style="display:none;">
             <div class="log-title">📋 寻宝日志</div>
             <div id="logContent" class="log-content"></div>
         </div>
-
         <div id="resultArea" style="display:none;">
             <div class="stats" id="statsContainer">
                 <div class="stat-item" data-type="total"><div class="stat-number" id="totalCount">0</div><div class="stat-label">独立站总数</div></div>
@@ -391,7 +373,6 @@
     function showError(msg) { errorDiv.textContent = msg; errorDiv.style.display = 'block'; setTimeout(() => errorDiv.style.display = 'none', 5000); }
     async function waitIfPaused() { while (isPaused && !shouldStop) { await new Promise(resolve => { resumeResolver = resolve; }); } }
 
-    // 保存当前显示的列表（从 detailListDiv 中提取）
     function saveUrlsToFile() {
         const links = Array.from(detailListDiv.querySelectorAll('a')).map(a => a.href);
         if (links.length === 0) { alert('没有可保存的链接'); return; }
@@ -426,11 +407,13 @@
         return val;
     }
 
+    // 基于完整 URL 去重
     function displayStatsAndStoreUrls(results, usdExcluded) {
-        // 结果去重（基于 url）
         const uniqueMap = new Map();
         for (const r of results) {
-            if (!uniqueMap.has(r.url)) uniqueMap.set(r.url, r.status);
+            if (!uniqueMap.has(r.url)) {
+                uniqueMap.set(r.url, r.status);
+            }
         }
         const uniqueResults = Array.from(uniqueMap.entries()).map(([url, status]) => ({ url, status }));
         
@@ -438,7 +421,7 @@
         buyableUrls = uniqueResults.filter(r => r.status === 'buyable').map(r => r.url);
         soldOutUrls = uniqueResults.filter(r => r.status === 'sold_out').map(r => r.url);
         unknownUrls = uniqueResults.filter(r => r.status === 'unknown').map(r => r.url);
-        usdExcludedUrls = []; // 美元站已经单独统计，但不在 results 中，需额外传入
+        usdExcludedUrls = [];
         irrelevantUrls = uniqueResults.filter(r => r.status === 'irrelevant').map(r => r.url);
         currentBuyableUrls = buyableUrls;
         
@@ -449,7 +432,6 @@
         usdSpan.textContent = usdExcluded;
         irrelevantSpan.textContent = irrelevantUrls.length;
         
-        // 默认显示可购买列表
         renderDetailList('buyable', buyableUrls);
     }
 
@@ -491,7 +473,6 @@
         }
     }
 
-    // 点击统计卡片
     function bindStatsEvents() {
         const stats = [
             { type: 'total', urls: () => allUrls },
@@ -504,7 +485,6 @@
         stats.forEach(stat => {
             const el = document.querySelector(`.stat-item[data-type="${stat.type}"]`);
             if (el) {
-                // 移除旧监听，避免重复
                 const newEl = el.cloneNode(true);
                 el.parentNode.replaceChild(newEl, el);
                 newEl.addEventListener('click', () => {
@@ -558,21 +538,20 @@
                             const data = await response.json();
                             if (data.results && Array.isArray(data.results)) {
                                 let filteredBlacklist = 0, usdThisBatch = 0, filteredNotProduct = 0;
-                                const domainMap = new Map();
+                                const urlMap = new Map(); // 基于完整 URL 去重
                                 for (const item of data.results) {
                                     if (isExcludedUrl(item.url)) { filteredBlacklist++; continue; }
                                     if (!isLikelyProductUrl(item.url)) { filteredNotProduct++; continue; }
                                     if (item.status === 'usd_excluded') { usdThisBatch++; currentUsdExcluded++; continue; }
-                                    try {
-                                        const host = new URL(item.url).hostname.replace(/^www\./, '');
-                                        if (!domainMap.has(host)) domainMap.set(host, { url: item.url, status: item.status });
-                                    } catch(e) {}
+                                    if (!urlMap.has(item.url)) {
+                                        urlMap.set(item.url, { url: item.url, status: item.status });
+                                    }
                                 }
-                                const newItems = Array.from(domainMap.values());
+                                const newItems = Array.from(urlMap.values());
                                 allResults.push(...newItems);
                                 if (allResults.length > target) allResults = allResults.slice(0, target);
                                 collectedResults = [...allResults];
-                                addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，过滤非产品页 ${filteredNotProduct} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立域名，累计 ${allResults.length}/${target}`);
+                                addLog(`📦 收到 ${data.results.length} 个原始结果，过滤黑名单 ${filteredBlacklist} 个，过滤非产品页 ${filteredNotProduct} 个，排除美元站 ${usdThisBatch} 个，剩余有效 ${newItems.length} 个独立商品页，累计 ${allResults.length}/${target}`);
                                 if (allResults.length >= target) { addLog(`🎯 已达到目标数量 ${target}，停止搜索`); stopCollect = true; break; }
                             } else { addLog(`⚠️ 未获得有效结果`, true); }
                         } catch (err) { addLog(`❌ 请求异常: ${err.message}，跳过此页`, true); continue; }
@@ -585,7 +564,7 @@
         collectedResults = allResults;
         if (shouldStop) { addLog("任务已停止", true); startBtn.disabled = false; pauseBtn.disabled = true; resumeBtn.disabled = true; detectBtn.disabled = false; saveUrlsBtn.disabled = true; currentTask = null; return; }
         
-        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立域名，请点击「检测库存」查看结果。`);
+        addLog(`🏁 搜索结束，共收集 ${allResults.length} 个独立商品页，请点击「检测库存」查看结果。`);
         detectBtn.disabled = false;
         startBtn.disabled = false; pauseBtn.disabled = true; resumeBtn.disabled = true;
         currentTask = null;
@@ -596,7 +575,7 @@
         addLog(`🔍 开始检测已收集的 ${collectedResults.length} 个网址...`);
         displayStatsAndStoreUrls(collectedResults, currentUsdExcluded);
         resultArea.style.display = 'block';
-        bindStatsEvents(); // 重新绑定事件（因为 DOM 重新生成）
+        bindStatsEvents();
     }
 
     function pauseSearch() { if (startBtn.disabled === false) return; isPaused = true; pauseBtn.disabled = true; resumeBtn.disabled = false; detectBtn.disabled = false; addLog("⏸️ 已暂停，点击「继续」恢复..."); }
